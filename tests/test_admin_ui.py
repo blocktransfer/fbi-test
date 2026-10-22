@@ -21,8 +21,11 @@ class AdminHttpTests(unittest.TestCase):
         self.addCleanup(self.audit_directory.cleanup)
         self.audit_path = str(Path(self.audit_directory.name) / "audit.jsonl")
         Path(self.audit_directory.name).chmod(0o700)
+        self.recipient_path = str(Path(self.audit_directory.name) / "recipient.json")
         self.state = AdminState(
-            env={"FBI_TEST_AUDIT_PATH": self.audit_path}, token="test-" + "x" * 40
+            env={"FBI_TEST_AUDIT_PATH": self.audit_path,
+                 "FBI_TEST_RECIPIENT_PATH": self.recipient_path},
+            token="test-" + "x" * 40
         )
         self.server = AdminServer(port=0, state=self.state)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -162,6 +165,50 @@ class AdminHttpTests(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/incident-deadlines", data, token=False)[0], 401)
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("POST", "/api/incident-deadlines", data)[0], 403)
+
+    def test_section_two_catalog_requires_auth_and_shows_all_sections(self):
+        status, data, _ = self.request("GET", "/api/recipient")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["catalog"]["sections"], [f"2.{i:02d}" for i in range(1,15)])
+        self.assertFalse(data["progress"]["production_ready"])
+        self.assertEqual(data["progress"]["reported_count"], 0)
+        self.assertEqual(self.request("GET", "/api/recipient", token=False)[0], 401)
+
+    def test_section_two_checklist_round_trip_and_private_file(self):
+        item = {"id":"2.02.agreement", "reported":True, "evidence_ref":"AGREEMENT-2026"}
+        status, result, _ = self.request("POST", "/api/recipient/check", item)
+        self.assertEqual(status, 200)
+        self.assertTrue(result["reported"])
+        self.assertFalse(result["independently_verified"])
+        self.assertEqual(self.request("GET", "/api/recipient")[1]["progress"]["reported_count"], 1)
+        text = Path(self.recipient_path).read_text()
+        self.assertIn("AGREEMENT-2026", text)
+        self.assertEqual(Path(self.recipient_path).stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.request("POST", "/api/recipient/check", {
+            "id":"2.02.agreement","reported":False,"evidence_ref":None})[0],200)
+        self.assertEqual(self.request("GET", "/api/recipient")[1]["progress"]["reported_count"],0)
+
+    def test_section_two_rejects_raw_personal_data_and_invalid_refs(self):
+        for req in (
+            {"id":"2.01.arpoc","reported":True,"evidence_ref":"Person John Doe"},
+            {"id":"2.01.arpoc","reported":True,"evidence_ref":"DOC-1234","email":"person@example.org"},
+            {"id":"2.99.fake","reported":True,"evidence_ref":"DOC-1234"},
+            {"id":"2.01.arpoc","reported":1,"evidence_ref":"DOC-1234"},
+            {"id":"2.01.arpoc","reported":True,"evidence_ref":""},
+        ):
+            self.assertEqual(self.request("POST","/api/recipient/check",req)[0],400)
+
+    def test_section_two_deadline_planner_nonpersistent(self):
+        status, result, _ = self.request("POST","/api/recipient/deadlines",{
+            "event":"pii_breach","occurred_at":"2026-10-22T12:00:00Z",
+            "initial_notice_at":"2026-10-22T12:30:00Z"})
+        self.assertEqual(status,200)
+        self.assertEqual(result["external_due_utc"],"2026-10-22T13:00:00+00:00")
+        self.assertEqual(result["written_report_due_utc"],"2026-10-27T12:30:00+00:00")
+        self.assertFalse(result["messages_sent"])
+        self.assertFalse(Path(self.recipient_path).exists())
+        self.assertEqual(self.request("POST","/api/recipient/deadlines", {
+            "event":"pii_breach","occurred_at":"2026-10-22T12:00:00Z","name":"unsafe"})[0],400)
 
     def test_all_section_one_definitions_available_only_to_authenticated_user(self):
         status, data, _ = self.request("GET", "/api/section-one")

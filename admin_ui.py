@@ -26,6 +26,8 @@ from security_controls import readiness_register
 from incident_deadlines import DeadlineError, incident_deadlines
 from channeling_definitions import definition_catalog
 from channeling_assessment import ContextError, assess_definitions
+from authorized_recipient import RecipientError, catalog as recipient_catalog, deadlines as recipient_deadlines
+from recipient_checklist import ChecklistError, RecipientChecklist
 
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
@@ -67,6 +69,10 @@ class AdminState:
         self.env = dict(os.environ if env is None else env)
         default_audit = Path.home() / ".blocktransfer-fbi-test" / "audit.jsonl"
         self.audit = AuditJournal(self.env.get("FBI_TEST_AUDIT_PATH", str(default_audit)))
+        default_recipient = default_audit.with_name("recipient-checklist.json")
+        self.recipient = RecipientChecklist(
+            self.env.get("FBI_TEST_RECIPIENT_PATH", str(default_recipient))
+        )
         self.token = secrets.token_urlsafe(32) if token is None else token
         self.events: deque[dict] = deque(maxlen=25)
         self.seen_requests: set[str] = set()
@@ -308,6 +314,13 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/recipient":
+                try:
+                    state = self.server.state.recipient.summary()
+                except ChecklistError:
+                    self._error(503, "Recipient checklist unavailable; no state inferred")
+                    return
+                self._json(200, {"catalog": recipient_catalog(), "progress": state})
             elif path == "/api/activity":
                 with self.server.state.lock:
                     events = list(self.server.state.events)
@@ -342,7 +355,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -370,6 +383,13 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/incident-deadlines":
                 self._json(200, incident_deadlines(request))
+            elif path == "/api/recipient/check":
+                result = self.server.state.recipient.update(request, self.server.state.audit)
+                self._json(200, result)
+            elif path == "/api/recipient/deadlines":
+                plan = recipient_deadlines(request)
+                self.server.state.audit.append("recipient_deadline_planned", "validated")
+                self._json(200, plan)
             elif path == "/api/section-one/assess":
                 assessment = assess_definitions(request)
                 self.server.state.audit.append("section_one_assessed", "validated")
@@ -391,7 +411,13 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(502, "Delivery unknown; do not retry without agency reconciliation")
         except AuditError:
             self._error(503, "Security audit unavailable; operation blocked; do not retry")
-        except (DeadlineError, ContextError) as exc:
+        except ChecklistError as exc:
+            # A malformed record is a caller error; I/O or corrupted storage
+            # must never imply success.
+            self._error(503 if "Checklist" in str(exc) or "persist" in str(exc)
+                        or "parse" in str(exc) or "securely" in str(exc) else 400,
+                        "Recipient checklist unavailable" if "Checklist" in str(exc) else str(exc))
+        except (DeadlineError, ContextError, RecipientError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")
