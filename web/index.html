@@ -19,6 +19,7 @@
         <a href="#recipient">▤ &nbsp; Section 2 recipient duties</a>
         <a href="#channeler">▥ &nbsp; Section 3 channeler duties</a>
         <a href="#fbi-oversight">◈ &nbsp; Section 4 FBI oversight</a>
+        <a href="#misc-provisions">§ &nbsp; Section 5 miscellaneous</a>
         <a href="#activity">◷ &nbsp; Activity log</a>
       </nav>
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
@@ -388,6 +389,153 @@
                 <p class="hint" id="oversight-template-note" role="status" aria-live="polite">No document has been sent or approved.</p>
               </div>
               <p class="recipient-caution">§4.01(a) requires a combined state/federal representative-sample audit program <strong>before</strong> permission may be granted. §4.03 independently requires FBI Channeler audits and first-audit certification with results within 90 calendar days of initial approved CHRI receipt. One-year and triennial dates shown here are illustrative planning anchors where the text does not specify an exact trigger.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="panel misc-section" id="misc-provisions" aria-labelledby="misc-title">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">COMPACT COUNCIL · SECTION 5 / MISCELLANEOUS PROVISIONS</div>
+              <h2 id="misc-title">Governance, audit authority &amp; formal notices</h2>
+              <p>§§5.01–5.08 · PDF pp. 18–19 · Source-linked checks for policy authority, higher contractual standards, audit powers and First Class Mail.</p>
+            </div>
+            <span id="misc-count" class="counter">Loading…</span>
+          </div>
+          <div class="warning recipient-warning">
+            <span class="warning-icon">!</span>
+            <div><strong>The Compact Council, CJIS APB and government authorities retain their exclusive powers.</strong>
+              <p>Marking evidence reported here never changes the Standard, lowers mandatory security measures, approves inspections, determines an investigation, issues rights or sends official correspondence. No CHRI or personal identifiers are accepted.</p>
+            </div><small>UNVERIFIED</small>
+          </div>
+          <div class="misc-grid">
+            <div class="recipient-list-panel">
+              <div class="field-heading"><strong>Section 5 documentary checkpoints</strong><span>17 nonidentifying reference codes</span></div>
+              <div id="misc-checks" class="recipient-controls" aria-live="polite"><p class="hint">Unlock the local admin session to load the glossary and checklist.</p></div>
+            </div>
+            <div class="misc-planners">
+              <details class="misc-tool" open>
+                <summary>Scope, parties and supporting assets · §§5.01–5.03</summary>
+                <form id="misc-scope-form" data-route="scope">
+                  <label>Entity category
+                    <select name="party">
+                      <option value="channeler">Channeler</option>
+                      <option value="authorized_recipient">Authorized Recipient</option>
+                      <option value="fbi">FBI</option>
+                      <option value="compact_officer_chief_administrator">Compact Officer/Chief Administrator</option>
+                      <option value="other">Other person</option>
+                    </select>
+                  </label>
+                  <label>Covered asset
+                    <select name="asset">
+                      <option value="personnel">Personnel</option><option value="systems">Systems</option>
+                      <option value="networks">Networks</option><option value="facilities">Facilities</option>
+                    </select>
+                  </label>
+                  <label class="misc-check"><input type="checkbox" name="supports_authorized_recipient" checked> Supports or acts on behalf of Authorized Recipient</label>
+                  <label class="misc-check"><input type="checkbox" name="rights_claimed"> A new right is being claimed under the Standard</label>
+                  <button class="button secondary" type="submit">Check applicability and rights</button>
+                </form>
+                <div id="misc-scope-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="misc-tool">
+                <summary>Minimum security and official change authority · §§5.04–5.05</summary>
+                <form id="misc-changes-form" data-route="changes">
+                  <label>Instrument
+                    <select name="instrument">
+                      <option value="outsourcing_standard">Compact Council Outsourcing Standard</option>
+                      <option value="cjis_security_policy">CJIS Security Policy</option>
+                      <option value="recipient_channeler_contract">Recipient–Channeler contract</option>
+                    </select>
+                  </label>
+                  <label>Proposed security change
+                    <select name="direction">
+                      <option value="stricter">More stringent</option>
+                      <option value="unchanged">Unchanged</option>
+                      <option value="weaker">Less stringent</option>
+                    </select>
+                  </label>
+                  <label>Claiming actor
+                    <select name="actor">
+                      <option value="authorized_recipient">Authorized Recipient</option>
+                      <option value="channeler">Channeler</option>
+                      <option value="compact_council">Compact Council</option>
+                      <option value="cjis_apb">CJIS APB</option>
+                      <option value="fbi">FBI</option>
+                      <option value="compact_officer_chief_administrator">Compact Officer/Chief Administrator</option>
+                      <option value="us_attorney_general">U.S. Attorney General</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label class="misc-check"><input type="checkbox" name="compact_council_consent_reported"> Compact Council consent reported, not verified</label>
+                  <label class="misc-check"><input type="checkbox" name="us_ag_consultation_reported"> Attorney General consultation reported, not verified</label>
+                  <button class="button secondary" type="submit">Check policy-change restrictions</button>
+                </form>
+                <div id="misc-changes-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="misc-tool">
+                <summary>Audits and investigation discretion · §§5.06–5.07</summary>
+                <form id="misc-authority-form" data-route="authority">
+                  <label>Authority power
+                    <select name="kind">
+                      <option value="audit">Audit or inspection</option>
+                      <option value="unauthorized_access_report">Unauthorized CHRI-access report</option>
+                    </select>
+                  </label>
+                  <label>Government actor
+                    <select name="actor">
+                      <option value="compact_officer_chief_administrator">Compact Officer/Chief Administrator</option>
+                      <option value="compact_council">Compact Council</option>
+                      <option value="us_attorney_general">U.S. Attorney General</option>
+                      <option value="applicable_state">Applicable state (final audit)</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label>Proposed action
+                    <select name="action">
+                      <option value="scheduled">Scheduled audit</option>
+                      <option value="unscheduled">Unscheduled audit</option>
+                      <option value="post_termination_final">Post-termination final audit</option>
+                      <option value="investigate">Investigate unauthorized access</option>
+                      <option value="decline">Decline investigation</option>
+                    </select>
+                  </label>
+                  <button class="button secondary" type="submit">Check authority named by Standard</button>
+                </form>
+                <div id="misc-authority-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="misc-tool">
+                <summary>First Class Mail route · §5.08</summary>
+                <form id="misc-mail-form" data-route="mail">
+                  <label>Official addressee type
+                    <select name="addressee">
+                      <option value="fbi_compact_officer">FBI Compact Officer</option>
+                      <option value="fbi">FBI</option>
+                      <option value="compact_council">Compact Council</option>
+                      <option value="us_attorney_general">U.S. Attorney General</option>
+                    </select>
+                  </label>
+                  <label>Correspondence type
+                    <select name="purpose">
+                      <option value="notice">Notice</option><option value="assurance">Assurance</option>
+                      <option value="correspondence">Other required correspondence</option>
+                    </select>
+                  </label>
+                  <input name="mail_method" type="hidden" value="first_class_mail">
+                  <button class="button secondary" type="submit">Display source mailing instructions</button>
+                </form>
+                <div id="misc-mail-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <div class="oversight-panel">
+                <h3>Blank Section 5 document outlines</h3>
+                <p class="subtle">Copy-only samples. Complete sensitive contents in an approved external workflow, and verify the published 2023 mailing address is still current.</p>
+                <label for="misc-template-select">Document type</label>
+                <select id="misc-template-select"><option value="">Choose a blank template…</option></select>
+                <textarea id="misc-template-text" rows="9" readonly aria-label="Blank Section 5 document template"></textarea>
+                <button id="misc-template-copy" type="button" class="button secondary" disabled>Copy blank outline</button>
+                <p id="misc-template-feedback" class="hint" role="status" aria-live="polite">No document is sent or approved.</p>
+              </div>
             </div>
           </div>
         </section>

@@ -295,6 +295,20 @@ class AdminHttpTests(unittest.TestCase):
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("GET", "/api/misc/templates")[0], 403)
 
+    def test_section_five_frontend_exposes_safe_workflows(self):
+        status, page, _ = self.request("GET", "/", token=False)
+        self.assertEqual(status, 200)
+        for field in (b'id="misc-provisions"', b'id="misc-checks"',
+                      b'id="misc-scope-form"', b'id="misc-changes-form"',
+                      b'id="misc-authority-form"', b'id="misc-mail-form"',
+                      b'id="misc-template-select"'):
+            self.assertIn(field, page)
+        status, js, _ = self.request("GET", "/app.js", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'"/api/misc/check"', js)
+        self.assertIn(b'"/api/misc/templates"', js)
+        self.assertNotIn(b"innerHTML", js)
+
     def test_section_five_catalog_is_protected_and_no_authority_granted(self):
         status, data, _ = self.request("GET", "/api/misc")
         self.assertEqual(status, 200)

@@ -168,3 +168,17 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .oversight-panel .recipient-output{margin-top:14px}
 .oversight-panel .button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:1140px){.oversight-grid{grid-template-columns:1fr}.oversight-tools{padding:17px}}
+
+/* Section 5 misc provisions, government powers, minimums and postal route. */
+.misc-section{margin-top:20px}
+.misc-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(350px,.95fr)}
+.misc-planners{padding:20px;min-width:0}
+.misc-tool{border:1px solid #e0e9ed;background:#fbfdfd;border-radius:9px;margin-bottom:13px}
+.misc-tool>summary{padding:14px;cursor:pointer;color:#286c61;font-size:11px;font-weight:790;line-height:1.45}
+.misc-tool form{padding:0 14px 15px;display:grid;gap:12px}
+.misc-tool form label:not(.misc-check){display:grid;gap:7px;font-size:10.5px;color:#526678;font-weight:760}
+.misc-tool select,.misc-tool input[type=text]{width:100%;min-width:0;border:1px solid #dbe5e9;background:#fff;border-radius:7px;padding:10px;color:#395068;font-size:11px}
+.misc-tool .misc-check{display:flex;gap:9px;align-items:flex-start;font-size:10.5px;line-height:1.55;color:#586f7c}
+.misc-tool .misc-check input{margin:2px 0;accent-color:#168e73;flex-shrink:0}
+.misc-tool>.recipient-output{margin:0 14px 14px}
+@media(max-width:1140px){.misc-grid{grid-template-columns:1fr}.misc-planners{padding:17px}}

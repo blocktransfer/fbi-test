@@ -758,11 +758,187 @@ async function copyOversightTemplate() {
   }
 }
 
+let miscTemplates = [];
+
+function renderMisc(payload) {
+  const {catalog, progress} = payload;
+  const container = byId("misc-checks");
+  const opened = new Set(Array.from(container.querySelectorAll("details[open]"))
+    .map(detail => detail.dataset.section));
+  container.replaceChildren();
+  byId("misc-count").textContent =
+    progress.reported_count + " / " + catalog.check_count + " reported · none verified";
+  for (const section of catalog.sections) {
+    const clause = catalog.clauses.find(x => x.section === section);
+    const group = document.createElement("details");
+    group.className = "recipient-group";
+    group.dataset.section = section;
+    group.open = opened.has(section);
+    const summary = document.createElement("summary");
+    summary.textContent = "§" + section + " · " + clause.topic.replaceAll("_", " ");
+    const explanation = document.createElement("p");
+    explanation.className = "channeler-clause-text";
+    explanation.textContent = clause.description + " · PDF page " + clause.pdf_page;
+    group.append(summary, explanation);
+    for (const check of catalog.checks.filter(x => x.section === section)) {
+      const previous = progress.checks[check.id];
+      const row = document.createElement("div");
+      row.className = "recipient-check";
+      const label = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = Boolean(previous?.reported);
+      label.append(box, document.createTextNode(check.description));
+      const help = document.createElement("small");
+      help.textContent = "Operator-reported evidence only · NEVER authorizes a waiver, audit or mail dispatch";
+      const controls = document.createElement("div");
+      controls.className = "recipient-entry";
+      const reference = document.createElement("input");
+      reference.type = "text";
+      reference.maxLength = 64;
+      reference.autocomplete = "off";
+      reference.spellcheck = false;
+      reference.placeholder = "Nonidentifying reference e.g. GOV-2026-001";
+      reference.setAttribute("aria-label", "Evidence code for " + check.id);
+      reference.value = previous?.evidence_ref || "";
+      const save = document.createElement("button");
+      save.type = "button";
+      save.className = "recipient-save";
+      save.textContent = "Record";
+      const feedback = document.createElement("p");
+      feedback.className = "recipient-note";
+      feedback.setAttribute("aria-live", "polite");
+      save.addEventListener("click", async () => {
+        save.disabled = true;
+        try {
+          await api("/api/misc/check", "POST", {
+            id: check.id, reported: box.checked,
+            evidence_ref: box.checked ? reference.value.trim() : null
+          });
+          await updateMisc();
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.className = "recipient-note error";
+          save.disabled = false;
+        }
+      });
+      controls.append(reference, save);
+      row.append(label, help, controls, feedback);
+      group.append(row);
+    }
+    container.append(group);
+  }
+}
+async function updateMisc() {
+  renderMisc(await api("/api/misc"));
+}
+function putMiscRows(target, rows) {
+  target.replaceChildren();
+  for (const [label, value] of rows) {
+    const p = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    p.append(strong, document.createTextNode(String(value)));
+    target.append(p);
+  }
+  const caution = document.createElement("p");
+  caution.textContent = "No agency decision, approval, waiver, mail dispatch or CHRI operation was performed.";
+  target.append(caution);
+}
+async function evaluateMisc(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const kind = form.dataset.route;
+  const body = {};
+  for (const field of form.elements) {
+    if (!field.name) continue;
+    body[field.name] = field.type === "checkbox" ? field.checked : field.value;
+  }
+  const target = byId("misc-" + kind + "-result");
+  try {
+    const data = await api("/api/misc/" + kind, "POST", body);
+    if (kind === "scope") {
+      putMiscRows(target, [
+        ["Recipient-supporting asset covered", data.covered_by_section_5_01 ? "Yes" : "Not determined by this clause"],
+        ["Named party under §5.02", data.party_named_by_section_5_02 ? "Yes" : "No"],
+        ["CJISSECPOL incorporated", "Yes · §5.03"],
+        ["New rights granted", "No"]
+      ]);
+    } else if (kind === "changes") {
+      putMiscRows(target, [
+        ["Review outcome", data.status],
+        ["Required authority", data.formal_change_authority],
+        ["Restriction", data.reason],
+        ["Minimums relaxed", "No; claimed approvals unverified"]
+      ]);
+    } else if (kind === "authority") {
+      putMiscRows(target, [
+        ["Source section", data.section],
+        ["Actor named for requested action", data.named_authority_for_action ? "Yes" : "No"],
+        ["Official identity or delegation verified", "No"],
+        ["Audit or investigation performed", "No"]
+      ]);
+    } else {
+      const address = data.published_2023_routing;
+      putMiscRows(target, [
+        ["Required method in 2023 Standard", address.method],
+        ["Recipient", address.recipient],
+        ["Routing", address.routing],
+        ["Organization", address.organization],
+        ["Street", address.street],
+        ["City/state/ZIP", address.city_state_zip],
+        ["Current address confirmed", "No — verify with official authority"],
+        ["Notice dispatched or received", "No"]
+      ]);
+    }
+  } catch (error) {
+    target.textContent = error.message;
+  }
+}
+function showMiscTemplates(payload) {
+  miscTemplates = payload.templates;
+  const select = byId("misc-template-select");
+  const existing = select.value;
+  select.replaceChildren();
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "Choose a blank template…";
+  select.append(blank);
+  for (const item of miscTemplates) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.title + " · " + item.sections.join(", ");
+    select.append(option);
+  }
+  select.value = miscTemplates.some(x => x.id === existing) ? existing : "";
+  chooseMiscTemplate();
+}
+function chooseMiscTemplate() {
+  const current = miscTemplates.find(x => x.id === byId("misc-template-select").value);
+  byId("misc-template-text").value = current ? current.body : "";
+  byId("misc-template-copy").disabled = !current;
+  byId("misc-template-feedback").textContent = current
+    ? "Unpopulated draft only. No mailing, government action or policy amendment."
+    : "No document is sent or approved.";
+}
+async function copyMiscTemplate() {
+  const text = byId("misc-template-text").value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    byId("misc-template-feedback").textContent =
+      "Blank outline copied. Complete and deliver only through an authorized external process.";
+  } catch (_) {
+    byId("misc-template-feedback").textContent =
+      "Clipboard unavailable; manually select and copy the blank document.";
+  }
+}
+
 async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne, recipient, templates, channeler, channelerForms, oversight, oversightForms] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler"), api("/api/channeler/templates"), api("/api/fbi-oversight"), api("/api/fbi-oversight/templates")]);
+    const [status, log, register, sectionOne, recipient, templates, channeler, channelerForms, oversight, oversightForms, misc, miscForms] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler"), api("/api/channeler/templates"), api("/api/fbi-oversight"), api("/api/fbi-oversight/templates"), api("/api/misc"), api("/api/misc/templates")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
@@ -774,6 +950,8 @@ async function refresh() {
     showChannelerTemplates(channelerForms);
     showOversight(oversight);
     showOversightTemplates(oversightForms);
+    renderMisc(misc);
+    showMiscTemplates(miscForms);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -914,6 +1092,11 @@ byId("oversight-planner").addEventListener("submit", calculateOversight);
 byId("oversight-sample-form").addEventListener("submit", estimateOversightSample);
 byId("oversight-template").addEventListener("change", selectOversightTemplate);
 byId("oversight-copy").addEventListener("click", copyOversightTemplate);
+for (const id of ["scope", "changes", "authority", "mail"]) {
+  byId("misc-" + id + "-form").addEventListener("submit", evaluateMisc);
+}
+byId("misc-template-select").addEventListener("change", chooseMiscTemplate);
+byId("misc-template-copy").addEventListener("click", copyMiscTemplate);
 byId("channeler-check-dissemination").addEventListener("click", () => checkChannelerSchema("dissemination"));
 byId("channeler-check-rapback-ref").addEventListener("click", () => checkChannelerSchema("rapback"));
 byId("channeler-copy-template").addEventListener("click", copyChannelerTemplate);
