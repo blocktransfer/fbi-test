@@ -210,7 +210,25 @@ class AdminHttpTests(unittest.TestCase):
             "FBI_TEST_CA_BUNDLE": "/missing/ca",
             "FBI_TEST_CLIENT_CERT": "/missing/cert",
             "FBI_TEST_CLIENT_KEY": "/missing/key",
+            "FBI_TEST_AUTHORIZATION_REF": "agency-test-123",
+            "FBI_TEST_ENABLE_GATEWAY": "synthetic-only",
         })
+
+    def test_gateway_requires_explicit_synthetic_only_operator_enablement(self):
+        self.set_ready()
+        self.assertTrue(self.state.gateway_ready())
+        self.state.env["FBI_TEST_ENABLE_GATEWAY"] = "production"
+        self.assertFalse(self.state.gateway_ready())
+        self.assertEqual(self.request("POST", "/api/send", self.send_request())[0], 400)
+
+    def test_reference_must_match_configured_test_authorization(self):
+        self.set_ready()
+        self.assertEqual(
+            self.request("POST", "/api/send", self.send_request(
+                authorization_ref="different-approval-123"
+            ))[0], 400
+        )
+        self.assertEqual(self.state.status()["attempts"], 0)
 
     def test_confirmation_required_even_with_gateway(self):
         self.set_ready()

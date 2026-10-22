@@ -42,6 +42,7 @@ GATEWAY_ENV = (
     "FBI_TEST_CA_BUNDLE",
     "FBI_TEST_CLIENT_CERT",
     "FBI_TEST_CLIENT_KEY",
+    "FBI_TEST_AUTHORIZATION_REF",
 )
 REQUEST_ID_PATTERN = re.compile(r"^[a-f0-9]{8}-[a-f0-9-]{27,40}$")
 # Defense in depth for the local *synthetic-only* console; not an IA-2 MFA system.
@@ -119,7 +120,13 @@ class AdminState:
             return self.notice_acknowledged and not self.session_expired and not self.session_locked
 
     def gateway_ready(self) -> bool:
-        return all(self.env.get(key) for key in GATEWAY_ENV)
+        return (
+            self.env.get("FBI_TEST_ENABLE_GATEWAY") == "synthetic-only"
+            and all(self.env.get(key) for key in GATEWAY_ENV)
+            and bool(AUTHORIZATION_PATTERN.fullmatch(
+                self.env.get("FBI_TEST_AUTHORIZATION_REF", "")
+            ))
+        )
 
     def status(self) -> dict:
         with self.lock:
@@ -161,6 +168,9 @@ class AdminState:
         auth = request["authorization_ref"]
         if not isinstance(auth, str) or not AUTHORIZATION_PATTERN.fullmatch(auth):
             raise SenderError("Valid agency test authorization reference required")
+        # This is a local operator-provided reference, NOT independent approval.
+        if not secrets.compare_digest(auth, self.env["FBI_TEST_AUTHORIZATION_REF"]):
+            raise SenderError("Test reference does not match the configured authorization")
         if request["confirmed"] is not True:
             raise SenderError("Explicit synthetic-only confirmation required")
         request_id = request["request_id"]

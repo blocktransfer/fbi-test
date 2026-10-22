@@ -54,9 +54,13 @@ The responsive console provides:
 - **Readiness & controls:** distinguishes implemented code safeguards from
   agency agreements, certification, EBTS validation, and other outstanding
   requirements.
-- **Activity:** metadata-only recent receipts stored in RAM. This is not a
-  durable or tamper-evident compliance audit log, and HTTP success is not FBI
-  acceptance.
+- **Activity:** metadata-only recent receipts stored in RAM, plus an owner-only
+  local SHA-256 hash-chained, fsynced audit journal on disk for security and
+  gateway events. The hash chain detects local corruption but is **not**
+  tamper-proof without independent protected anchors; shared tokens cannot
+  identify individual administrators. Audit retention, backup, oversight, and
+  operational monitoring remain external obligations. HTTP success is never
+  FBI acceptance.
 
 The UI never accepts or uploads fingerprint files, CJI, PII, arbitrary data
 buffers, certificates, or private keys. It **cannot** submit fingerprints
@@ -73,6 +77,8 @@ export FBI_TEST_APPROVED_HOST='approved-test.example'
 export FBI_TEST_CA_BUNDLE='/secure/path/agency-ca.pem'
 export FBI_TEST_CLIENT_CERT='/secure/path/test-client.pem'
 export FBI_TEST_CLIENT_KEY='/secure/path/test-client.key'
+export FBI_TEST_AUTHORIZATION_REF='agency-test-123'
+export FBI_TEST_ENABLE_GATEWAY='synthetic-only'
 python admin_ui.py
 ```
 
@@ -80,6 +86,18 @@ The host, endpoint, and certificate paths above are **placeholders** and
 must be replaced only after receiving an approved agency test interface
 and written authorization to use it. Environment values remain in the local
 process; don't paste credential contents into browser inputs or GitHub.
+
+The local typed authorization reference must match the server setting and
+the gateway must be explicitly enabled as `synthetic-only`; neither test
+reference nor the enablement flag verifies independent agency authorization.
+
+An owner-only audit log is created by default under
+`~/.blocktransfer-fbi-test/audit.jsonl`. Override its location only with a
+secure local path using `FBI_TEST_AUDIT_PATH`; the destination directory
+must have 0700 permissions and the file 0600. The audit journal is
+fail-closed, contains no payloads, and is not a substitute for agency-managed
+archiving, one-year record retention, monitored review, protected backups,
+or external integrity anchoring (CJIS AU-2/3/9/11; Outsourcing 3.13).
 
 All sends require TLS hostname verification and the supplied client
 certificate. A request ID prevents repeated identical submissions within
