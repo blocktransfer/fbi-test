@@ -29,6 +29,12 @@ from channeling_assessment import ContextError, assess_definitions
 from authorized_recipient import RecipientError, catalog as recipient_catalog, deadlines as recipient_deadlines
 from recipient_checklist import ChecklistError, RecipientChecklist
 from recipient_templates import template_catalog
+from channeler_policy import catalog as channeler_catalog
+from channeler_checklist import ChannelerChecklist
+from channeler_operations import (
+    ChannelerInputError, deadlines as channeler_deadlines,
+    retention_dry_run, training_dry_run, rapback_dry_run,
+)
 
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
@@ -73,6 +79,12 @@ class AdminState:
         default_recipient = default_audit.with_name("recipient-checklist.json")
         self.recipient = RecipientChecklist(
             self.env.get("FBI_TEST_RECIPIENT_PATH", str(default_recipient))
+        )
+        self.channeler = ChannelerChecklist(
+            self.env.get(
+                "FBI_TEST_CHANNELER_PATH",
+                str(default_audit.with_name("channeler-checklist.json")),
+            )
         )
         self.token = secrets.token_urlsafe(32) if token is None else token
         self.events: deque[dict] = deque(maxlen=25)
@@ -315,6 +327,13 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/channeler":
+                try:
+                    progress = self.server.state.channeler.summary()
+                except ChecklistError:
+                    self._error(503, "Channeler checklist unavailable")
+                    return
+                self._json(200, {"catalog": channeler_catalog(), "progress": progress})
             elif path == "/api/recipient/templates":
                 self._json(200, template_catalog())
             elif path == "/api/recipient":
@@ -358,7 +377,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -386,6 +405,23 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/incident-deadlines":
                 self._json(200, incident_deadlines(request))
+            elif path == "/api/channeler/check":
+                self._json(200, self.server.state.channeler.update(
+                    request, self.server.state.audit
+                ))
+            elif path in (
+                "/api/channeler/deadlines", "/api/channeler/retention",
+                "/api/channeler/training", "/api/channeler/rapback",
+            ):
+                planner = {
+                    "/api/channeler/deadlines": channeler_deadlines,
+                    "/api/channeler/retention": retention_dry_run,
+                    "/api/channeler/training": training_dry_run,
+                    "/api/channeler/rapback": rapback_dry_run,
+                }[path]
+                result = planner(request)
+                self.server.state.audit.append("channeler_planned", "validated")
+                self._json(200, result)
             elif path == "/api/recipient/check":
                 result = self.server.state.recipient.update(request, self.server.state.audit)
                 self._json(200, result)
@@ -420,7 +456,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(503 if "Checklist" in str(exc) or "persist" in str(exc)
                         or "parse" in str(exc) or "securely" in str(exc) else 400,
                         "Recipient checklist unavailable" if "Checklist" in str(exc) else str(exc))
-        except (DeadlineError, ContextError, RecipientError) as exc:
+        except (DeadlineError, ContextError, RecipientError, ChannelerInputError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")

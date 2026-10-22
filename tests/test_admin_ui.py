@@ -22,9 +22,11 @@ class AdminHttpTests(unittest.TestCase):
         self.audit_path = str(Path(self.audit_directory.name) / "audit.jsonl")
         Path(self.audit_directory.name).chmod(0o700)
         self.recipient_path = str(Path(self.audit_directory.name) / "recipient.json")
+        self.channeler_path = str(Path(self.audit_directory.name) / "channeler.json")
         self.state = AdminState(
             env={"FBI_TEST_AUDIT_PATH": self.audit_path,
-                 "FBI_TEST_RECIPIENT_PATH": self.recipient_path},
+                 "FBI_TEST_RECIPIENT_PATH": self.recipient_path,
+                 "FBI_TEST_CHANNELER_PATH": self.channeler_path},
             token="test-" + "x" * 40
         )
         self.server = AdminServer(port=0, state=self.state)
@@ -189,6 +191,70 @@ class AdminHttpTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/api/recipient/templates", token=False)[0], 401)
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("GET", "/api/recipient/templates")[0], 403)
+
+    def test_section_three_catalog_is_separate_and_secured(self):
+        status, data, _ = self.request("GET", "/api/channeler")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["catalog"]["clause_count"], 25)
+        self.assertEqual(data["catalog"]["check_count"], 39)
+        self.assertEqual(data["progress"]["reported_count"], 0)
+        self.assertFalse(data["progress"]["production_ready"])
+        self.assertEqual(self.request("GET", "/api/channeler", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/channeler")[0], 403)
+
+    def test_section_three_checklist_writes_only_private_synthetic_reference(self):
+        request = {"id": "3.05.fbi_written_program_approval",
+                   "reported": True, "evidence_ref": "UNVERIFIED-DOC-2026"}
+        status, result, _ = self.request("POST", "/api/channeler/check", request)
+        self.assertEqual(status, 200)
+        self.assertFalse(result["independently_verified"])
+        self.assertEqual(self.request("GET", "/api/channeler")[1]["progress"]["reported_count"], 1)
+        self.assertEqual(self.request("GET", "/api/recipient")[1]["progress"]["reported_count"], 0)
+        self.assertEqual(Path(self.channeler_path).stat().st_mode & 0o777, 0o600)
+        self.assertFalse(Path(self.recipient_path).exists())
+        self.assertEqual(self.request("POST", "/api/channeler/check", {
+            "id": "3.05.fbi_written_program_approval", "reported": False,
+            "evidence_ref": None
+        })[0], 200)
+
+    def test_section_three_rejects_unauthorized_fields_and_identifiers(self):
+        for request in (
+            {"id":"3.05.physical_program", "reported":True, "evidence_ref":"Applicant Name"},
+            {"id":"3.05.physical_program", "reported":True, "evidence_ref":"DOC-2026","chri":"PII"},
+            {"id":"2.01.permission", "reported":True, "evidence_ref":"DOC-2026"},
+        ):
+            self.assertEqual(self.request("POST", "/api/channeler/check", request)[0], 400)
+
+    def test_section_three_deadlines_and_retention_api_dry_run(self):
+        status, data, _ = self.request("POST", "/api/channeler/deadlines", {
+            "event": "pii_breach_discovered", "occurred_at": "2026-10-22T12:00:00Z"
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(data["written_report_due_utc"], "2026-10-27T12:00:00+00:00")
+        self.assertFalse(data["messages_sent"])
+        status, result, _ = self.request("POST", "/api/channeler/retention", {
+            "received_at": "2026-10-22T12:00:00Z",
+            "acknowledged_at": "2026-10-22T14:00:00Z",
+            "as_of": "2026-10-22T14:10:00Z"
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(result["destroy_by_utc"], "2026-10-22T14:00:00+00:00")
+        self.assertFalse(result["destruction_performed"])
+        self.assertFalse(Path(self.channeler_path).exists())
+
+    def test_section_three_rapback_refuses_real_applicant_identifiers(self):
+        request = {
+            "subscription_started_at": "2026-05-01T10:00:00Z",
+            "as_of": "2026-10-22T12:00:00Z",
+            "recipient_has_validated": True,
+            "fbi_testing_and_approval_reported": True,
+            "purpose": "synthetic_only",
+        }
+        self.assertEqual(self.request("POST", "/api/channeler/rapback", request)[0], 200)
+        self.assertEqual(self.request("POST", "/api/channeler/rapback", {
+            **request, "applicant": "private name"
+        })[0], 400)
 
     def test_section_two_catalog_requires_auth_and_shows_all_sections(self):
         status, data, _ = self.request("GET", "/api/recipient")

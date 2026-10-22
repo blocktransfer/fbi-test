@@ -27,6 +27,7 @@ EVENTS = frozenset({
     "session_acknowledged", "logout", "synthetic_preview",
     "gateway_started", "gateway_completed", "section_one_assessed",
     "recipient_check_requested", "recipient_check_saved", "recipient_deadline_planned",
+    "channeler_check_requested", "channeler_check_saved", "channeler_planned",
 })
 OUTCOMES = frozenset({
     "denied", "locked", "expired", "acknowledged", "terminated",
