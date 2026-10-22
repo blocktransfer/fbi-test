@@ -1,0 +1,28 @@
+# Never commit live or synthetic biometric payload files.
+*.ebts
+*.ansi
+*.nist
+*.an2
+*.wsq
+*.bin
+*.dat
+*.tif
+*.tiff
+
+# Do not check in authentication material or local runtime configuration.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Python and local editor artifacts.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
