@@ -108,6 +108,53 @@ notices, verify authority, or reinstate a suspended operation.
 See [`docs/section-2-implementation.md`](docs/section-2-implementation.md)
 for the clause-by-clause implementation matrix and external obligations.
 
+## Section 3 Channeler responsibilities (synthetic-only)
+
+The Compact Council's November 29, 2023 Channeling Outsourcing Standard,
+**Section 3 (``3.01–3.25; printed pp. 3–7)**, sets security and operating
+duties for an **FBI-selected Channeler**. The dashboard now has a
+**Section 3 channeler duties** screen with all 25 clauses and 39
+evidence-reference checkpoints. It is strictly separate from the Section 2
+Authorized Recipient checklist.
+
+Key functions:
+- **Compliance and agency approvals:** document status codes for the
+  physical/personnel/IT Security Program (including FBI written approval),
+  current network diagram, **FBI preapproval of changes**, approved
+  contingency plan, access logs and audit/inspection readiness.
+- **Deadlines:** source-defined 60-day policy updates; one-hour PII breach
+  notices; four-hour other incident/termination notices; written Channeler
+  incident report within **five calendar days of discovery**; 24-hour
+  employee access-record updates AND FBI notices.
+- **Hypothetical CHRI custody (`3.12):** computes destruction immediately
+  at confirmed recipient receipt or by day 30, whichever occurs first.
+  This is a calculator, **not a CHRI data store or secure erasure system**.
+- **Training (`3.19):** preassignment training, annual refresher and
+  FBI certification anniversary schedule; separately represents agreements
+  assigning the training duty to the Recipient.
+- **Rap Back (``3.22–3.25):** yearly messaging milestone with validation
+  explicitly reserved to the Recipient. Never enables real subscriptions,
+  treats unverified FBI test approval as valid, or stores applicant PII.
+- **Synthetic record checks (``3.13, 3.24):** validates a built-in dummy
+  dissemination record containing the five required log fields and minimum
+  one-year retention period, and validates synthetic TCN/Subscription-ID
+  linkage with no additional applicant data. No real records are retained.
+- **Twelve blank policy/correspondence templates** for secure completion
+  outside this system. No report, notice or fingerprint information is sent.
+
+Channeler metadata are kept in an owner-only local file
+`~/.blocktransfer-fbi-test/channeler-checklist.json` (override with
+`FBI_TEST_CHANNELER_PATH`); enter only restricted alphanumeric document
+reference codes, never employee identities, actual CHRI, transaction
+numbers, agreements or incident details. The audited local checklist
+cannot verify documentary authenticity or FBI approval. All actual
+CHRI intake, direct NGI access, EBTS exchange, Rap Back operations,
+personnel access, record sanitization and official notification delivery
+remain disabled or outside the prototype.
+
+See [`docs/section-3-implementation.md`](docs/section-3-implementation.md)
+for each clause, source page, implemented function and external dependency.
+
 ## Local admin frontend
 
 Start the **local-only** administrative dashboard from the repository root:
