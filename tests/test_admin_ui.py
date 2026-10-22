@@ -123,6 +123,8 @@ class AdminHttpTests(unittest.TestCase):
         self.assertIn(b'id="channeler-retention-form"', html)
         self.assertIn(b'id="channeler-training-form"', html)
         self.assertIn(b'id="channeler-rapback-form"', html)
+        self.assertIn(b'id="channeler-check-dissemination"', html)
+        self.assertIn(b'id="channeler-check-rapback-ref"', html)
         status, code, _ = self.request("GET", "/app.js", token=False)
         self.assertEqual(status, 200)
         self.assertIn(b'"/api/channeler/check"', code)

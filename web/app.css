@@ -148,3 +148,8 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .channeler-templates select,.channeler-templates textarea{width:100%;padding:10px;border-radius:7px;border:1px solid #dbe5e9;color:#30465d;background:#fff;font-size:11px}
 .channeler-templates textarea{margin:11px 0;line-height:1.55;resize:vertical;min-height:185px;font-family:ui-monospace,monospace}
 .channeler-templates .button:disabled{opacity:.5}
+
+.channeler-schema{margin:22px 0;padding:17px;border:1px solid #e0e9ed;background:#f9fcfc;border-radius:9px}
+.channeler-schema h3{font-size:13px;margin:0 0 7px}
+.channeler-schema .button{margin:8px 0}
+.channeler-schema .recipient-output{margin-top:13px}

@@ -286,6 +286,33 @@ async function copyChannelerTemplate() {
       "Clipboard access unavailable; select and copy the template text manually.";
   }
 }
+async function checkChannelerSchema(kind) {
+  const result = byId("channeler-schema-result");
+  const current = new Date().toISOString();
+  const request = kind === "dissemination" ? {
+    recipient_oca_or_ori: "TEST-OCA-ABC123",
+    transaction_control_number: "TEST-TCN-ABC123",
+    statutory_authority_test_ref: "TEST-AUTH-ABC123",
+    disseminated_at: current,
+    as_of: current,
+    means: "test_secure_electronic"
+  } : {
+    transaction_control_number: "TEST-TCN-ABC123",
+    subscription_identifier: "TEST-RBS-ABC123"
+  };
+  try {
+    const reply = await api(kind === "dissemination"
+      ? "/api/channeler/dissemination"
+      : "/api/channeler/rapback-reference", "POST", request);
+    result.textContent = kind === "dissemination"
+      ? "Five required fields structurally valid. Hypothetical minimum log retention until " +
+        new Date(reply.minimum_retention_until_utc).toLocaleString() +
+        ". No CHRI log stored and no statutory authority verified."
+      : "Exactly two synthetic fields valid: TCN and Rap Back Subscription Identifier. No applicant PII stored, no actual subscription created.";
+  } catch (error) {
+    result.textContent = error.message;
+  }
+}
 function channelerTime(value) {
   return value ? new Date(value).toISOString() : null;
 }
@@ -700,6 +727,8 @@ for (const formName of ["deadline","retention","training","rapback"]) {
 }
 byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
 byId("channeler-template-select").addEventListener("change", chooseChannelerTemplate);
+byId("channeler-check-dissemination").addEventListener("click", () => checkChannelerSchema("dissemination"));
+byId("channeler-check-rapback-ref").addEventListener("click", () => checkChannelerSchema("rapback"));
 byId("channeler-copy-template").addEventListener("click", copyChannelerTemplate);
 byId("recipient-copy-template").addEventListener("click", copyRecipientTemplate);
 byId("recipient-planner").addEventListener("submit", calculateRecipientDeadlines);
