@@ -174,6 +174,50 @@ async function sendTest() {
   }
 }
 
+function localDateInput(value) {
+  return new Date(value - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+function printDeadline(iso) {
+  return iso ? new Date(iso).toLocaleString() : "Requires initial notification timestamp";
+}
+async function calculateIncident() {
+  const target = byId("incident-results");
+  target.replaceChildren();
+  const discovered = byId("incident-discovered").value;
+  if (!discovered) {
+    target.textContent = "Enter the date and time the incident was discovered.";
+    return;
+  }
+  const payload = {
+    role: byId("incident-role").value,
+    category: byId("incident-category").value,
+    discovered_at: new Date(discovered).toISOString(),
+  };
+  const notice = byId("incident-notified").value;
+  if (notice) payload.initial_notice_at = new Date(notice).toISOString();
+  try {
+    const data = await api("/api/incident-deadlines", "POST", payload);
+    const items = [
+      ["CJIS internal report (if incident)", printDeadline(data.internal_incident_report_due_utc)],
+      ["External notification", printDeadline(data.external_notification_due_utc)],
+      ["Written report", printDeadline(data.written_report_due_utc)],
+      ["Notify", data.external_recipients],
+      ["Authority", data.security_policy_reference + "; Outsourcing " + data.outsourcing_reference],
+    ];
+    for (const [name, value] of items) {
+      const line = document.createElement("p");
+      const title = document.createElement("strong");
+      title.textContent = name + ": ";
+      line.append(title, document.createTextNode(value));
+      target.append(line);
+    }
+    const warning = document.createElement("p");
+    warning.textContent = "No notifications were sent. Organizational reporting must happen immediately.";
+    target.append(warning);
+  } catch (error) {
+    target.textContent = error.message;
+  }
+}
 async function acknowledgeUse() {
   byId("acknowledge-use").disabled = true;
   try {
@@ -197,8 +241,10 @@ async function logout() {
   sendButtonState();
 }
 
+byId("incident-discovered").value = localDateInput(Date.now());
 byId("local-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 byId("refresh").addEventListener("click", refresh);
+byId("incident-calculate").addEventListener("click", calculateIncident);
 byId("logout").addEventListener("click", logout);
 byId("accept-use").addEventListener("change", () => {
   byId("acknowledge-use").disabled = !byId("accept-use").checked;

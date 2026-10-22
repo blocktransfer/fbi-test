@@ -86,6 +86,27 @@
               <p id="register-summary" class="subtle">Checking policy requirements…</p>
               <div id="policy-controls" class="register-items" aria-live="polite"></div>
             </div>
+            <div class="incident-planner">
+              <h3>Incident reporting deadlines</h3>
+              <p>Calculate source-defined notification deadlines. No incident details are collected or retained; this tool never sends a notice.</p>
+              <label for="incident-role">Reporting role</label>
+              <select id="incident-role">
+                <option value="authorized_recipient">Authorized Recipient</option>
+                <option value="channeler">Channeler</option>
+              </select>
+              <label for="incident-category">Incident type</label>
+              <select id="incident-category">
+                <option value="pii_breach">PII breach</option>
+                <option value="security_violation">Other security violation</option>
+                <option value="agreement_termination">Agreement termination</option>
+              </select>
+              <label for="incident-discovered">Discovery time (your local timezone)</label>
+              <input id="incident-discovered" type="datetime-local">
+              <label for="incident-notified">Initial notification time, if known (Authorized Recipient)</label>
+              <input id="incident-notified" type="datetime-local">
+              <button class="button secondary" id="incident-calculate" type="button">Calculate reporting deadlines</button>
+              <div class="incident-results" id="incident-results" role="status" aria-live="polite"></div>
+            </div>
             <div class="config"><div class="config-title"><strong>Gateway configuration</strong><span id="config-dot" class="dot grey"></span></div><p>Set these server environment variables; never upload certificates in the browser.</p><code>FBI_TEST_ENDPOINT</code><code>FBI_TEST_APPROVED_HOST</code><code>FBI_TEST_CA_BUNDLE</code><code>FBI_TEST_CLIENT_CERT</code><code>FBI_TEST_CLIENT_KEY</code><code>FBI_TEST_AUTHORIZATION_REF</code><code>FBI_TEST_ENABLE_GATEWAY</code><div class="config-status" id="gateway-host">No gateway configured.</div></div>
           </section>
         </div>

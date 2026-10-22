@@ -51,9 +51,14 @@ The responsive console provides:
 - **Test console:** locally validates a deterministic non-CJI sample, or
   sends exactly one sample to an *authorized* test gateway when configured.
   Sending requires a typed authorization reference and explicit confirmation.
-- **Readiness & controls:** distinguishes implemented code safeguards from
-  agency agreements, certification, EBTS validation, and other outstanding
-  requirements.
+- **Readiness & controls:** source-referenced CJIS and Compact Council
+  obligations, including technical, Authorized Recipient, Channeler, and FBI
+  responsibilities, without making unsupported compliance claims.
+- **Incident deadlines:** computes the 1-hour/4-hour and five-calendar-day
+  notification milestones from CJIS IR-6 and Outsourcing §§2.08/3.15.
+  No incident description is collected or saved, and **no notice is sent**.
+  For Authorized Recipients, the five-day written-report clock is measured
+  from initial notification; for Channelers it is measured from discovery.
 - **Activity:** metadata-only recent receipts stored in RAM, plus an owner-only
   local SHA-256 hash-chained, fsynced audit journal on disk for security and
   gateway events. The hash chain detects local corruption but is **not**

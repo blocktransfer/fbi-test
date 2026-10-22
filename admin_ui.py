@@ -23,6 +23,7 @@ from uuid import uuid4
 
 from audit_journal import AuditError, AuditJournal
 from security_controls import readiness_register
+from incident_deadlines import DeadlineError, incident_deadlines
 
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
@@ -337,7 +338,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -363,6 +364,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, {"session": "terminated"})
             elif not self.server.state.use_authorized():
                 self._error(403, "Restricted system-use notice must be acknowledged")
+            elif path == "/api/incident-deadlines":
+                self._json(200, incident_deadlines(request))
             elif path == "/api/preview":
                 if set(request) != {"padding"}:
                     raise SenderError("Unexpected preview fields")
@@ -380,6 +383,8 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(502, "Delivery unknown; do not retry without agency reconciliation")
         except AuditError:
             self._error(503, "Security audit unavailable; operation blocked; do not retry")
+        except DeadlineError as exc:
+            self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")
         except SenderError as exc:

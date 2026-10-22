@@ -113,6 +113,45 @@ class AdminHttpTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/api/status")[0], 401)
         self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True})[0], 401)
 
+    def test_incident_deadline_planner_never_sends_or_stores_details(self):
+        status, result, _ = self.request("POST", "/api/incident-deadlines", {
+            "role": "channeler",
+            "category": "pii_breach",
+            "discovered_at": "2026-10-22T10:00:00Z",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(result["external_notification_due_utc"], "2026-10-22T11:00:00+00:00")
+        self.assertEqual(result["written_report_due_utc"], "2026-10-27T10:00:00+00:00")
+        self.assertFalse(result["automatically_notified"])
+        self.assertEqual(self.state.status()["attempts"], 0)
+
+    def test_incident_deadline_recipient_written_report_uses_initial_notice(self):
+        status, result, _ = self.request("POST", "/api/incident-deadlines", {
+            "role": "authorized_recipient",
+            "category": "security_violation",
+            "discovered_at": "2026-10-22T10:00:00Z",
+            "initial_notice_at": "2026-10-22T13:00:00Z",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(result["internal_incident_report_due_utc"], "2026-10-22T11:00:00+00:00")
+        self.assertEqual(result["external_notification_due_utc"], "2026-10-22T14:00:00+00:00")
+        self.assertEqual(result["written_report_due_utc"], "2026-10-27T13:00:00+00:00")
+
+    def test_incident_deadline_planner_rejects_personal_details(self):
+        status, _, _ = self.request("POST", "/api/incident-deadlines", {
+            "role": "channeler",
+            "category": "pii_breach",
+            "discovered_at": "2026-10-22T10:00:00Z",
+            "name": "Do not include PII",
+        })
+        self.assertEqual(status, 400)
+
+    def test_incident_deadline_planner_requires_auth_and_notice(self):
+        data = {"role": "channeler", "category": "pii_breach", "discovered_at": "2026-10-22T10:00:00Z"}
+        self.assertEqual(self.request("POST", "/api/incident-deadlines", data, token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("POST", "/api/incident-deadlines", data)[0], 403)
+
     def test_security_readiness_catalog_is_never_certified(self):
         status, data, _ = self.request("GET", "/api/readiness")
         self.assertEqual(status, 200)
