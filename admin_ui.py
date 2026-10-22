@@ -68,6 +68,7 @@ class AdminState:
         self.failed_logons: deque[float] = deque()
         self.session_locked = False
         self.session_expired = False
+        self.notice_acknowledged = False
 
     def authenticate(self, candidate: str) -> bool:
         """AC-7-style lockout and local session timeout, enforced server-side.
@@ -93,6 +94,19 @@ class AdminState:
             if len(self.failed_logons) >= MAX_FAILED_LOGONS:
                 self.session_locked = True
             return False
+
+    def acknowledge_use(self) -> None:
+        with self.lock:
+            self.notice_acknowledged = True
+
+    def terminate_session(self) -> None:
+        with self.lock:
+            self.session_expired = True
+            self.notice_acknowledged = False
+
+    def use_authorized(self) -> bool:
+        with self.lock:
+            return self.notice_acknowledged and not self.session_expired and not self.session_locked
 
     def gateway_ready(self) -> bool:
         return all(self.env.get(key) for key in GATEWAY_ENV)
@@ -247,7 +261,9 @@ class AdminHandler(BaseHTTPRequestHandler):
             if not self._authorized():
                 self._error(401, "Session unavailable; restart the local server to unlock")
                 return
-            if path == "/api/status":
+            if not self.server.state.use_authorized():
+                self._error(403, "Restricted system-use notice must be acknowledged")
+            elif path == "/api/status":
                 self._json(200, self.server.state.status())
             elif path == "/api/activity":
                 with self.server.state.lock:
@@ -278,7 +294,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -292,7 +308,19 @@ class AdminHandler(BaseHTTPRequestHandler):
             request = json.loads(self.rfile.read(length))
             if not isinstance(request, dict):
                 raise SenderError("JSON object required")
-            if path == "/api/preview":
+            if path == "/api/session":
+                if request != {"acknowledge": True}:
+                    raise SenderError("Explicit system-use acknowledgment required")
+                self.server.state.acknowledge_use()
+                self._json(200, {"session": "acknowledged", "production_access": False})
+            elif path == "/api/logout":
+                if request:
+                    raise SenderError("Logout requires an empty request")
+                self.server.state.terminate_session()
+                self._json(200, {"session": "terminated"})
+            elif not self.server.state.use_authorized():
+                self._error(403, "Restricted system-use notice must be acknowledged")
+            elif path == "/api/preview":
                 if set(request) != {"padding"}:
                     raise SenderError("Unexpected preview fields")
                 data = synthetic_bytes(request["padding"])

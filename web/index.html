@@ -20,10 +20,26 @@
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
     </aside>
     <div class="workspace">
-      <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>Sender console</strong></div><div class="top-actions"><span class="environment"><span class="dot"></span> Test environment</span><button id="refresh" class="refresh" type="button">↻ &nbsp; Refresh</button><span class="avatar">BT</span></div></header>
+      <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>Sender console</strong></div><div class="top-actions"><span class="environment"><span class="dot"></span> Test environment</span><button id="refresh" class="refresh" type="button">↻ &nbsp; Refresh</button><button id="logout" class="refresh" type="button">Log out</button><span class="avatar">BT</span></div></header>
       <main>
         <section id="overview">
           <div class="heading"><div><div class="eyebrow">OPERATIONS / OVERVIEW</div><h1>Fingerprint sender <em>console</em></h1><p>Monitor the local integration workspace, prepare synthetic tests, and track security readiness.</p></div><small id="local-date" class="date">LOCAL ADMIN</small></div>
+          <div id="use-notice" class="notice-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="notice-title">
+            <div class="notice-card">
+              <div class="eyebrow">RESTRICTED SYSTEM · CJIS AC-8</div>
+              <h2 id="notice-title">System use notification</h2>
+              <p>This is a restricted information system for authorized synthetic testing only.</p>
+              <ul>
+                <li>System usage may be monitored, recorded, and subject to audit.</li>
+                <li>Unauthorized use is prohibited and may subject users to criminal and civil penalties.</li>
+                <li>Use of this system indicates consent to monitoring and recording.</li>
+                <li>This prototype cannot receive CJI or submit real fingerprints to FBI NGI.</li>
+              </ul>
+              <label class="notice-check"><input id="accept-use" type="checkbox"> I acknowledge these conditions before accessing the console.</label>
+              <button id="acknowledge-use" class="button primary" type="button" disabled>Acknowledge and enter</button>
+              <p class="feedback" id="ack-feedback" role="status" aria-live="polite"></p>
+            </div>
+          </div>
           <div id="auth-notice" class="auth-notice" hidden role="alert"><strong>Admin session locked</strong><p id="auth-message">Open the one-time dashboard URL printed by python admin_ui.py in your terminal.</p></div>
           <div class="hero"><div class="hero-copy"><span class="hero-eyebrow"><span class="dot"></span> RESTRICTED TEST WORKSPACE</span><h2>A secure starting point<br>for every submission.</h2><p>Only deterministic, non-biometric test bytes are permitted. Production fingerprint exchange and FBI connectivity are intentionally unavailable.</p><a href="#testing">Open test console ↗</a></div><div class="hero-art" aria-hidden="true">BT</div></div>
           <div class="metrics">

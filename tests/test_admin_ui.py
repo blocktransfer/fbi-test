@@ -20,6 +20,7 @@ class AdminHttpTests(unittest.TestCase):
         self.thread.start()
         self.addCleanup(self.close_server)
         self.origin = self.server.origin
+        self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True})[0], 200)
 
     def close_server(self):
         self.server.shutdown()
@@ -57,6 +58,24 @@ class AdminHttpTests(unittest.TestCase):
             self.assertGreater(len(content), 100)
             self.assertEqual(headers["Cache-Control"], "no-store")
             self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
+
+    def test_system_notice_blocks_api_until_acknowledgment(self):
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/status")[0], 403)
+        self.assertEqual(self.request("POST", "/api/preview", {"padding": 0})[0], 403)
+        self.assertEqual(self.request("POST", "/api/session", {"acknowledge": False})[0], 400)
+        self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True})[0], 200)
+        self.assertEqual(self.request("GET", "/api/status")[0], 200)
+
+    def test_acknowledgment_needs_correct_admin_token(self):
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True}, token=False)[0], 401)
+        self.assertFalse(self.state.notice_acknowledged)
+
+    def test_logout_revokes_all_future_access(self):
+        self.assertEqual(self.request("POST", "/api/logout", {})[0], 200)
+        self.assertEqual(self.request("GET", "/api/status")[0], 401)
+        self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True})[0], 401)
 
     def test_authentication_on_status(self):
         self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)

@@ -15,6 +15,7 @@ function loadToken() {
     try { token = sessionStorage.getItem(storageKey) || ""; } catch (_) {}
   }
   byId("auth-notice").hidden = Boolean(token);
+  byId("use-notice").hidden = !token;
 }
 
 async function api(path, method = "GET", payload) {
@@ -111,6 +112,10 @@ async function refresh() {
   } catch (error) {
     byId("auth-notice").hidden = false;
     byId("auth-message").textContent = error.message;
+    if (error.message.includes("restart the local server")) {
+      token = "";
+      try { sessionStorage.removeItem(storageKey); } catch (_) {}
+    }
     gatewayReady = false;
     sendButtonState();
   } finally { byId("refresh").disabled = false; }
@@ -149,8 +154,36 @@ async function sendTest() {
   }
 }
 
+async function acknowledgeUse() {
+  byId("acknowledge-use").disabled = true;
+  try {
+    if (!byId("accept-use").checked) throw Error("Acknowledgment required.");
+    await api("/api/session", "POST", { acknowledge: true });
+    byId("use-notice").hidden = true;
+    await refresh();
+  } catch (error) {
+    feedback("ack-feedback", error.message, "error");
+    byId("acknowledge-use").disabled = false;
+  }
+}
+async function logout() {
+  try { if (token) await api("/api/logout", "POST", {}); } catch (_) {}
+  token = "";
+  try { sessionStorage.removeItem(storageKey); } catch (_) {}
+  byId("use-notice").hidden = true;
+  byId("auth-notice").hidden = false;
+  byId("auth-message").textContent = "Session ended. Restart the local server to obtain a new admin URL.";
+  gatewayReady = false;
+  sendButtonState();
+}
+
 byId("local-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 byId("refresh").addEventListener("click", refresh);
+byId("logout").addEventListener("click", logout);
+byId("accept-use").addEventListener("change", () => {
+  byId("acknowledge-use").disabled = !byId("accept-use").checked;
+});
+byId("acknowledge-use").addEventListener("click", acknowledgeUse);
 byId("preview").addEventListener("click", preview);
 byId("send").addEventListener("click", sendTest);
 byId("confirmed").addEventListener("change", sendButtonState);
@@ -162,4 +195,4 @@ for (const nav of document.querySelectorAll(".sidebar nav a")) {
   });
 }
 loadToken();
-refresh();
+if (!token) sendButtonState();
