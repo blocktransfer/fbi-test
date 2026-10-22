@@ -125,3 +125,19 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .recipient-templates select,.recipient-templates textarea{width:100%;padding:10px;border:1px solid #dae4e9;border-radius:7px;background:#fafcfd;color:#3d556a;font-size:11px;line-height:1.6}
 .recipient-templates textarea{margin:10px 0;resize:vertical;min-height:180px;font-family:ui-monospace,monospace}
 .recipient-templates .button:disabled{opacity:.55;cursor:not-allowed}
+
+/* Section 3 Channeler security and operations. */
+.channeler-section{margin-top:20px}
+.channeler-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr)}
+.channeler-clause-text{padding:0 14px 9px;color:#74889a;font-size:10.5px;line-height:1.65}
+.channeler-planners{padding:21px;min-width:0}
+.channeler-tool{border:1px solid #e0e9ed;border-radius:9px;margin:0 0 13px;background:#fcfdfd}
+.channeler-tool>summary{cursor:pointer;padding:14px;font-weight:770;font-size:11px;color:#2d6d5d;line-height:1.45}
+.channeler-tool form{padding:5px 15px 0;display:grid;gap:12px}
+.channeler-tool label:not(.channeler-boolean){display:grid;gap:6px;color:#556d7c;font-size:10px;font-weight:740}
+.channeler-tool form input[type=datetime-local],.channeler-tool form select{width:100%;min-width:0;border-radius:7px;border:1px solid #dbe5ec;background:#fff;padding:10px;color:#304c60;font-size:11px}
+.channeler-tool .button{margin-top:4px}
+.channeler-tool .recipient-output{margin:13px 15px 15px}
+.channeler-boolean{display:flex;gap:8px;align-items:flex-start;color:#52687c;font-size:10.5px;line-height:1.5}
+.channeler-boolean input{margin:2px 0;accent-color:#168a73;flex-shrink:0}
+@media(max-width:1140px){.channeler-grid{grid-template-columns:1fr}.channeler-planners{padding:17px}}

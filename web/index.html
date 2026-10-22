@@ -17,6 +17,7 @@
         <a href="#controls">⬡ &nbsp; Readiness &amp; controls</a>
         <a href="#section-one">§ &nbsp; Section 1 definitions</a>
         <a href="#recipient">▤ &nbsp; Section 2 recipient duties</a>
+        <a href="#channeler">▥ &nbsp; Section 3 channeler duties</a>
         <a href="#activity">◷ &nbsp; Activity log</a>
       </nav>
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
@@ -215,6 +216,88 @@
                 <p id="recipient-template-note" class="hint" role="status" aria-live="polite">Nothing is submitted or saved by this tool.</p>
               </div>
               <p class="recipient-caution">§2.08: PII breach notice within one hour; other violation or termination within four hours. Written breach/violation report within five calendar days of initial notification. §2.14 sets no numeric notice deadline for early voluntary termination.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="panel channeler-section" id="channeler" aria-labelledby="channeler-title">
+          <div class="panel-head"><div><div class="eyebrow">COMPACT COUNCIL · CHANNELER / SECTION 3</div>
+            <h2 id="channeler-title">Channeler security &amp; operations</h2>
+            <p>§§3.01–3.25 · Source-grounded workflow tracking and synthetic lifecycle planners.</p></div>
+            <span id="channeler-count" class="counter">Loading…</span>
+          </div>
+          <div class="warning recipient-warning"><span class="warning-icon">!</span>
+            <div><strong>Real fingerprint and CHRI processing remains unavailable</strong>
+              <p>Checklist assertions are not FBI approvals. These calculators never retain CHRI, take fingerprints, send notices, destroy media, connect to NGI, or operate Rap Back subscriptions.</p>
+            </div><small>TEST ONLY</small>
+          </div>
+          <div class="channeler-grid">
+            <div class="recipient-list-panel">
+              <div class="field-heading"><strong>Section 3 duties and evidence</strong><span>39 checkpoints</span></div>
+              <div id="channeler-checks" class="recipient-controls" aria-live="polite"><p class="hint">Unlock your local admin session to load policies.</p></div>
+            </div>
+            <div class="channeler-planners">
+              <details class="channeler-tool" open>
+                <summary>Incident, policy &amp; personnel notice deadlines</summary>
+                <form id="channeler-deadline-form">
+                  <label>Event
+                    <select name="event">
+                      <option value="policy_update_received">Policies updated · §3.04</option>
+                      <option value="pii_breach_discovered">PII breach · §3.15</option>
+                      <option value="security_violation_discovered">Other security violation · §3.15</option>
+                      <option value="contract_termination_discovered">Contract termination · §3.15</option>
+                      <option value="employee_access_changed">CHRI personnel access changed · §3.18</option>
+                      <option value="recipient_exchange_terminated">Recipient exchange terminated · §3.17</option>
+                      <option value="early_voluntary_termination">Early voluntary termination · §3.03</option>
+                    </select>
+                  </label>
+                  <label>Discovery / event timestamp (local)
+                    <input name="occurred_at" type="datetime-local" required>
+                  </label>
+                  <button class="button secondary" type="submit">Calculate Section 3 deadlines</button>
+                </form><div id="channeler-deadline-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="channeler-tool">
+                <summary>Hypothetical CHRI retention and destruction · §3.12</summary>
+                <form id="channeler-retention-form">
+                  <label>Hypothetical receipt (local)
+                    <input name="received_at" type="datetime-local" required>
+                  </label>
+                  <label>Successful Recipient acknowledgment, if any (local)
+                    <input name="acknowledged_at" type="datetime-local">
+                  </label>
+                  <button class="button secondary" type="submit">Calculate earliest destruction deadline</button>
+                </form><div id="channeler-retention-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="channeler-tool">
+                <summary>Personnel training and annual certification · §3.19</summary>
+                <form id="channeler-training-form">
+                  <label>Agreement anniversary / start (local)
+                    <input name="agreement_anniversary" type="datetime-local" required>
+                  </label>
+                  <label>Hypothetical assignment date (local)
+                    <input name="assignment_at" type="datetime-local" required>
+                  </label>
+                  <label>Last completed training, if reported (local)
+                    <input name="last_training_at" type="datetime-local">
+                  </label>
+                  <label class="channeler-boolean"><input name="recipient_retains_training_by_contract" type="checkbox"> Recipient retains security awareness training by agreement</label>
+                  <button class="button secondary" type="submit">Calculate training milestones</button>
+                </form><div id="channeler-training-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <details class="channeler-tool">
+                <summary>Rap Back annual messaging, Recipient validation · §§3.22–3.25</summary>
+                <form id="channeler-rapback-form">
+                  <label>Hypothetical subscription start (local)
+                    <input name="subscription_started_at" type="datetime-local" required>
+                  </label>
+                  <label class="channeler-boolean"><input name="recipient_has_validated" type="checkbox"> Recipient validation reported (not verified)</label>
+                  <label class="channeler-boolean"><input name="fbi_testing_and_approval_reported" type="checkbox"> FBI test approval reported (not verified)</label>
+                  <button class="button secondary" type="submit">Calculate annual messaging milestone</button>
+                </form><div id="channeler-rapback-result" class="recipient-output" role="status" aria-live="polite"></div>
+              </details>
+              <p class="recipient-caution">§3.15: Channeler written security-violation reports are due within five calendar days of <strong>discovery</strong>, unlike the Authorized Recipient clock in §2.08. §3.23: the Channeler relays validation messages but cannot validate for the Recipient.</p>
             </div>
           </div>
         </section>

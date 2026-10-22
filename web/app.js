@@ -247,6 +247,156 @@ async function copyRecipientTemplate() {
       "Clipboard permission unavailable. Select the template text to copy manually.";
   }
 }
+function channelerTime(value) {
+  return value ? new Date(value).toISOString() : null;
+}
+function channelerDisplay(value) {
+  return value ? new Date(value).toLocaleString() : "No specific numerical deadline provided";
+}
+function channelerResult(id, fields) {
+  const target = byId(id);
+  target.replaceChildren();
+  for (const [label, value] of fields) {
+    const line = document.createElement("p");
+    const key = document.createElement("strong");
+    key.textContent = label + ": ";
+    line.append(key, document.createTextNode(String(value)));
+    target.append(line);
+  }
+  const note = document.createElement("p");
+  note.textContent = "Calculation only. No real data processed and no outside action taken.";
+  target.append(note);
+}
+function showChanneler(payload) {
+  const {catalog, progress} = payload;
+  byId("channeler-count").textContent =
+    progress.reported_count + " / " + catalog.check_count + " reported · none verified";
+  const root = byId("channeler-checks");
+  root.replaceChildren();
+  for (const clause of catalog.clauses) {
+    const details = document.createElement("details");
+    details.className = "recipient-group";
+    const summary = document.createElement("summary");
+    summary.textContent = "§" + clause.section + " · " + clause.category.replaceAll("_", " ");
+    details.append(summary);
+    const overview = document.createElement("p");
+    overview.className = "channeler-clause-text";
+    overview.textContent = clause.description + " · Printed p. " + clause.printed_page;
+    details.append(overview);
+    for (const check of catalog.checks.filter(c => c.section === clause.section)) {
+      const entry = document.createElement("div");
+      entry.className = "recipient-check";
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      const previous = progress.checks[check.id];
+      checkbox.checked = Boolean(previous?.reported);
+      label.append(checkbox, document.createTextNode(check.label));
+      const citation = document.createElement("small");
+      citation.textContent = "§" + check.section + " · operator-reported, not verified";
+      const row = document.createElement("div");
+      row.className = "recipient-entry";
+      const evidence = document.createElement("input");
+      evidence.type = "text";
+      evidence.placeholder = "Nonidentifying document code, e.g. POLICY-2026-001";
+      evidence.maxLength = 64;
+      evidence.spellcheck = false;
+      evidence.autocomplete = "off";
+      evidence.value = previous?.evidence_ref || "";
+      evidence.setAttribute("aria-label", "Reference for " + check.id);
+      const save = document.createElement("button");
+      save.className = "recipient-save";
+      save.textContent = "Record";
+      save.type = "button";
+      const feedback = document.createElement("p");
+      feedback.className = "recipient-note";
+      feedback.setAttribute("aria-live", "polite");
+      save.addEventListener("click", async () => {
+        save.disabled = true;
+        try {
+          await api("/api/channeler/check", "POST", {
+            id: check.id, reported: checkbox.checked,
+            evidence_ref: checkbox.checked ? evidence.value.trim() : null
+          });
+          // Preserve section disclosure across refresh.
+          const wasOpen = details.open;
+          const latest = await api("/api/channeler");
+          showChanneler(latest);
+          const next = Array.from(root.children).find(
+            node => node.querySelector("summary")?.textContent?.startsWith("§" + clause.section + " ·")
+          );
+          if (next) next.open = wasOpen;
+        } catch (error) {
+          feedback.textContent = error.message;
+          save.disabled = false;
+        }
+      });
+      row.append(evidence, save);
+      entry.append(label, citation, row, feedback);
+      details.append(entry);
+    }
+    root.append(details);
+  }
+}
+async function runChannelerPlan(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const key = form.id.replace("channeler-", "").replace("-form", "");
+  const outputs = {
+    "deadline": "/api/channeler/deadlines", "retention": "/api/channeler/retention",
+    "training": "/api/channeler/training", "rapback": "/api/channeler/rapback"
+  };
+  const resultIds = {
+    "deadline": "channeler-deadline-result", "retention": "channeler-retention-result",
+    "training": "channeler-training-result", "rapback": "channeler-rapback-result"
+  };
+  const kind = outputs[key] ? key : "deadline";
+  const request = {};
+  for (const field of form.elements) {
+    if (!field.name) continue;
+    if (field.type === "datetime-local") {
+      if (field.value) request[field.name] = channelerTime(field.value);
+    } else if (field.type === "checkbox") {
+      request[field.name] = field.checked;
+    } else {
+      request[field.name] = field.value;
+    }
+  }
+  if (kind === "retention" || kind === "training" || kind === "rapback")
+    request.as_of = new Date().toISOString();
+  if (kind === "rapback") request.purpose = "synthetic_only";
+  try {
+    const result = await api(outputs[kind], "POST", request);
+    if (kind === "deadline") channelerResult(resultIds[kind], [
+      ["Source", result.sections.join(", ")],
+      ["Notice/milestone due", channelerDisplay(result.initial_due_utc)],
+      ["Written security violation report due", result.written_report_due_utc
+        ? channelerDisplay(result.written_report_due_utc) + " (from discovery)" : "Not specified for this event"],
+      ["Recipients", result.recipients], ["Action", result.instruction],
+      ["Notice sent", "No"]
+    ]);
+    if (kind === "retention") channelerResult(resultIds[kind], [
+      ["Hypothetical destroy-by time", channelerDisplay(result.destroy_by_utc)],
+      ["Overdue relative to now", result.overdue ? "Yes" : "No"],
+      ["Actual CHRI deleted", "No — no CHRI enters the prototype"]
+    ]);
+    if (kind === "training") channelerResult(resultIds[kind], [
+      ["Channeler training duty", result.channeler_training_duty_applies ? "Applicable" : "Reported retained by Recipient"],
+      ["Preassignment training reported", result.preassignment_training_reported ? "Yes" : "No"],
+      ["Next refresher", channelerDisplay(result.next_training_due_utc)],
+      ["Next certification anniversary", channelerDisplay(result.next_fbi_certification_anniversary_utc)],
+      ["FBI certification sent", "No"]
+    ]);
+    if (kind === "rapback") channelerResult(resultIds[kind], [
+      ["Next annual message milestone", channelerDisplay(result.next_annual_validation_message_utc)],
+      ["Who actually validates", result.validation_authority],
+      ["FBI approval independently verified", "No"],
+      ["Messages sent/subscriptions enabled", "No"]
+    ]);
+  } catch (error) {
+    byId(resultIds[kind]).textContent = error.message;
+  }
+}
 let recipientCatalog = null;
 
 function receiptLine(parent, title, content) {
@@ -366,7 +516,7 @@ async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne, recipient, templates] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates")]);
+    const [status, log, register, sectionOne, recipient, templates, channeler] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
@@ -374,6 +524,7 @@ async function refresh() {
     renderDefinitions();
     showRecipient(recipient);
     showRecipientTemplates(templates);
+    showChanneler(channeler);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -489,6 +640,14 @@ async function logout() {
 
 byId("incident-discovered").value = localDateInput(Date.now());
 byId("recipient-occurred").value = localDateInput(Date.now());
+for (const id of ["channeler-deadline-form", "channeler-retention-form",
+                   "channeler-training-form", "channeler-rapback-form"]) {
+  const form = byId(id);
+  for (const field of form.elements) {
+    if (field.type === "datetime-local" && field.name !== "acknowledged_at"
+        && field.name !== "last_training_at") field.value = localDateInput(Date.now());
+  }
+}
 refreshRecipientFields();
 byId("local-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 byId("refresh").addEventListener("click", refresh);
@@ -496,6 +655,9 @@ byId("definition-query").addEventListener("input", renderDefinitions);
 byId("section-one-form").addEventListener("submit", runSectionOneAssessment);
 byId("incident-calculate").addEventListener("click", calculateIncident);
 byId("recipient-event").addEventListener("change", refreshRecipientFields);
+for (const formName of ["deadline","retention","training","rapback"]) {
+  byId("channeler-" + formName + "-form").addEventListener("submit", runChannelerPlan);
+}
 byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
 byId("recipient-copy-template").addEventListener("click", copyRecipientTemplate);
 byId("recipient-planner").addEventListener("submit", calculateRecipientDeadlines);

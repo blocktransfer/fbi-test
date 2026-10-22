@@ -115,6 +115,20 @@ class AdminHttpTests(unittest.TestCase):
         self.assertIn(b'"/api/recipient/deadlines"', script)
         self.assertNotIn(b"innerHTML", script)
 
+    def test_section_three_dashboard_renders_safe_live_controls(self):
+        status, html, _ = self.request("GET", "/", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'id="channeler-checks"', html)
+        self.assertIn(b'id="channeler-deadline-form"', html)
+        self.assertIn(b'id="channeler-retention-form"', html)
+        self.assertIn(b'id="channeler-training-form"', html)
+        self.assertIn(b'id="channeler-rapback-form"', html)
+        status, code, _ = self.request("GET", "/app.js", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'"/api/channeler/check"', code)
+        self.assertIn(b'"/api/channeler/retention"', code)
+        self.assertNotIn(b"innerHTML", code)
+
     def test_assets_served_without_token(self):
         for asset in ("/", "/app.css", "/app.js"):
             status, content, headers = self.request("GET", asset, token=False)
