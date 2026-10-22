@@ -5,6 +5,7 @@ import json
 import threading
 import unittest
 from unittest.mock import patch
+import time
 from uuid import uuid4
 
 from admin_ui import AdminServer, AdminState, synthetic_bytes
@@ -60,6 +61,37 @@ class AdminHttpTests(unittest.TestCase):
     def test_authentication_on_status(self):
         self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)
         self.assertEqual(self.request("GET", "/api/status")[0], 200)
+
+    def test_invalid_logons_lock_token_after_five_attempts(self):
+        for _ in range(5):
+            code, _, _ = self.request("GET", "/api/status", token=False)
+            self.assertEqual(code, 401)
+        self.assertTrue(self.state.session_locked)
+        self.assertEqual(self.request("GET", "/api/status")[0], 401)
+
+    def test_idle_session_expiration_is_enforced_by_server(self):
+        self.state.last_authenticated = time.monotonic() - 901
+        self.assertEqual(self.request("GET", "/api/status")[0], 401)
+        self.assertTrue(self.state.session_expired)
+
+    def test_absolute_session_expiration_is_enforced(self):
+        self.state.session_started = time.monotonic() - (8 * 3600 + 1)
+        self.assertEqual(self.request("GET", "/api/status")[0], 401)
+        self.assertTrue(self.state.session_expired)
+
+    def test_failure_window_prunes_prior_attempts(self):
+        self.state.failed_logons.append(time.monotonic() - 901)
+        self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)
+        self.assertFalse(self.state.session_locked)
+        self.assertEqual(len(self.state.failed_logons), 1)
+
+    def test_successful_authentication_clears_failure_counter(self):
+        for _ in range(4):
+            self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)
+        self.assertEqual(self.request("GET", "/api/status")[0], 200)
+        self.assertFalse(self.state.failed_logons)
+        self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)
+        self.assertFalse(self.state.session_locked)
 
     def test_cross_origin_post_rejected(self):
         status, _, _ = self.request("POST", "/api/preview", {"padding": 0}, origin=False)

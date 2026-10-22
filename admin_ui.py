@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import secrets
 import threading
+import time
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -40,6 +41,11 @@ GATEWAY_ENV = (
     "FBI_TEST_CLIENT_KEY",
 )
 REQUEST_ID_PATTERN = re.compile(r"^[a-f0-9]{8}-[a-f0-9-]{27,40}$")
+# Defense in depth for the local *synthetic-only* console; not an IA-2 MFA system.
+FAILURE_WINDOW_SECONDS = 15 * 60
+MAX_FAILED_LOGONS = 5
+IDLE_TIMEOUT_SECONDS = 15 * 60
+MAX_SESSION_SECONDS = 8 * 60 * 60
 
 
 def synthetic_bytes(padding: int) -> bytes:
@@ -57,6 +63,36 @@ class AdminState:
         self.seen_requests: set[str] = set()
         self.sending = False
         self.lock = threading.Lock()
+        self.session_started = time.monotonic()
+        self.last_authenticated = self.session_started
+        self.failed_logons: deque[float] = deque()
+        self.session_locked = False
+        self.session_expired = False
+
+    def authenticate(self, candidate: str) -> bool:
+        """AC-7-style lockout and local session timeout, enforced server-side.
+
+        Restart is the only local unlock mechanism. No authentication failure
+        ever re-enables a timed-out or locked token.
+        """
+        now = time.monotonic()
+        with self.lock:
+            if self.session_locked or self.session_expired:
+                return False
+            if (now - self.session_started >= MAX_SESSION_SECONDS
+                    or now - self.last_authenticated >= IDLE_TIMEOUT_SECONDS):
+                self.session_expired = True
+                return False
+            if candidate and secrets.compare_digest(candidate, self.token):
+                self.last_authenticated = now
+                self.failed_logons.clear()
+                return True
+            while self.failed_logons and now - self.failed_logons[0] >= FAILURE_WINDOW_SECONDS:
+                self.failed_logons.popleft()
+            self.failed_logons.append(now)
+            if len(self.failed_logons) >= MAX_FAILED_LOGONS:
+                self.session_locked = True
+            return False
 
     def gateway_ready(self) -> bool:
         return all(self.env.get(key) for key in GATEWAY_ENV)
@@ -73,6 +109,9 @@ class AdminState:
             "attempts": len(events),
             "accepted_http": sum(e["outcome"] == "http_2xx_not_fbi_acceptance" for e in events),
             "history_volatile": True,
+            "session_idle_timeout_seconds": IDLE_TIMEOUT_SECONDS,
+            "session_absolute_timeout_seconds": MAX_SESSION_SECONDS,
+            "mfa_configured": False,
         }
 
     def gateway(self) -> ApprovedTestGateway:
@@ -193,7 +232,7 @@ class AdminHandler(BaseHTTPRequestHandler):
 
     def _authorized(self) -> bool:
         value = self.headers.get("X-Admin-Token", "")
-        return bool(value) and secrets.compare_digest(value, self.server.state.token)
+        return self.server.state.authenticate(value)
 
     def _path(self) -> str:
         parsed = urlsplit(self.path)
@@ -206,7 +245,7 @@ class AdminHandler(BaseHTTPRequestHandler):
         path = self._path()
         if path.startswith("/api/"):
             if not self._authorized():
-                self._error(401, "Admin token required; reopen the startup URL")
+                self._error(401, "Session unavailable; restart the local server to unlock")
                 return
             if path == "/api/status":
                 self._json(200, self.server.state.status())
@@ -233,7 +272,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(403, "Origin not allowed")
             return
         if not self._authorized():
-            self._error(401, "Admin token required")
+            self._error(401, "Session unavailable; restart the local server to unlock")
             return
         if self.headers.get("Content-Type") != "application/json":
             self._error(415, "JSON content required")
