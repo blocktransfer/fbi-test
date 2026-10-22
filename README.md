@@ -30,6 +30,73 @@ agencies, rather than a public HTTP endpoint.
 - Offline unit tests and a GitHub Actions workflow. No live biometric or
   personally identifiable information is included in repository fixtures.
 
+## Local admin frontend
+
+Start the **local-only** administrative dashboard from the repository root:
+
+```sh
+python admin_ui.py
+```
+
+The server binds **only** to `127.0.0.1:8765`. It prints a unique URL such
+as `http://127.0.0.1:8765/#token=...` in the terminal. Open that entire URL
+in your browser. Its one-time session token is held in the tab and is removed
+from the address bar after loading. The API requires this token and rejects
+cross-origin or non-loopback-host requests. Closing the server ends the
+session; restart it to issue a new token.
+
+The responsive console provides:
+
+- **Overview:** isolated test-only status and session counters.
+- **Test console:** locally validates a deterministic non-CJI sample, or
+  sends exactly one sample to an *authorized* test gateway when configured.
+  Sending requires a typed authorization reference and explicit confirmation.
+- **Readiness & controls:** distinguishes implemented code safeguards from
+  agency agreements, certification, EBTS validation, and other outstanding
+  requirements.
+- **Activity:** metadata-only recent receipts stored in RAM. This is not a
+  durable or tamper-evident compliance audit log, and HTTP success is not FBI
+  acceptance.
+
+The UI never accepts or uploads fingerprint files, CJI, PII, arbitrary data
+buffers, certificates, or private keys. It **cannot** submit fingerprints
+to the FBI.
+
+### Optional authorized test-gateway setup
+
+The dashboard's transmission button remains disabled unless the **server**
+is launched with all of the following environment variables:
+
+```sh
+export FBI_TEST_ENDPOINT='https://approved-test.example/ingest'
+export FBI_TEST_APPROVED_HOST='approved-test.example'
+export FBI_TEST_CA_BUNDLE='/secure/path/agency-ca.pem'
+export FBI_TEST_CLIENT_CERT='/secure/path/test-client.pem'
+export FBI_TEST_CLIENT_KEY='/secure/path/test-client.key'
+python admin_ui.py
+```
+
+The host, endpoint, and certificate paths above are **placeholders** and
+must be replaced only after receiving an approved agency test interface
+and written authorization to use it. Environment values remain in the local
+process; don't paste credential contents into browser inputs or GitHub.
+
+All sends require TLS hostname verification and the supplied client
+certificate. A request ID prevents repeated identical submissions within
+the running process. In case of an uncertain gateway outcome, **do not
+retry automatically or manually until the agency reconciles delivery**.
+There is no production transmission mode.
+
+Run the frontend and sender tests locally:
+
+```sh
+python -m unittest discover -s tests -v
+node --check web/app.js
+```
+
+The dashboard uses Python's standard library and plain HTML, CSS, and JS,
+with no required application packages or third-party frontend dependencies.
+
 ## Quick start (synthetic data only)
 
 Requires Python 3.12+; no third-party Python dependencies.
@@ -79,7 +146,7 @@ CI jobs, or this public repository.
 
 | Policy reference | Initial implementation / outstanding work |
 | --- | --- |
-| `5.1.1; CA-3 (information exchange agreements) | Written agency agreement and authorized interface **required externally** before any real exchange. |
+| 5.1.1; CA-3 (information exchange agreements) | Written agency agreement and authorized interface **required externally** before any real exchange. |
 | SC-8(1), SC-12, SC-13 (transmission and cryptography) | Test adapter uses HTTPS with server verification and client TLS certificates; **approved FIPS-validated cryptography and network controls remain unverified**. |
 | AC-3, AC-4, IA-2 (access/identification) | Sender restricts test inputs and gateway destination; organizational identity, access, and MFA controls remain agency responsibilities. |
 | AU-2, AU-3, AU-9, AU-11 (logging/security/retention) | Minimal receipt avoids payload and response contents; durable access-controlled, tamper-evident audit records with retention **not yet built**. |
