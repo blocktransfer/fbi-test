@@ -28,6 +28,7 @@ from channeling_definitions import definition_catalog
 from channeling_assessment import ContextError, assess_definitions
 from authorized_recipient import RecipientError, catalog as recipient_catalog, deadlines as recipient_deadlines
 from recipient_checklist import ChecklistError, RecipientChecklist
+from recipient_templates import template_catalog
 
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
@@ -314,6 +315,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/recipient/templates":
+                self._json(200, template_catalog())
             elif path == "/api/recipient":
                 try:
                     state = self.server.state.recipient.summary()

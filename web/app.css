@@ -118,3 +118,10 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .recipient-caution{border-left:3px solid #d9a166;padding-left:12px;margin:15px 0 0;font-size:10px;line-height:1.75;color:#8e7971}
 @media(max-width:1140px){.recipient-grid{grid-template-columns:1fr}.recipient-list-panel{border-right:0;border-bottom:1px solid #edf1f4}.recipient-controls{max-height:390px}}
 @media(max-width:440px){.recipient-list-panel,.recipient-timeline{padding:17px}.recipient-entry{margin-left:0}}
+
+.recipient-templates{margin-top:23px;padding-top:16px;border-top:1px solid #e5ecef}
+.recipient-templates h3{font-size:13px;margin:0 0 7px}
+.recipient-templates label{display:grid;gap:8px;color:#425b6f;font-size:10px;font-weight:750}
+.recipient-templates select,.recipient-templates textarea{width:100%;padding:10px;border:1px solid #dae4e9;border-radius:7px;background:#fafcfd;color:#3d556a;font-size:11px;line-height:1.6}
+.recipient-templates textarea{margin:10px 0;resize:vertical;min-height:180px;font-family:ui-monospace,monospace}
+.recipient-templates .button:disabled{opacity:.55;cursor:not-allowed}

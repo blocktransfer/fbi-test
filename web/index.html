@@ -204,6 +204,16 @@
                 <button class="button secondary" id="recipient-calculate" type="submit">Calculate Section 2 deadlines</button>
               </form>
               <div class="recipient-output" id="recipient-output" role="status" aria-live="polite">Select an event to calculate its source-defined milestones.</div>
+              <div class="recipient-templates">
+                <h3>Written correspondence templates</h3>
+                <p class="subtle">Copy blank templates for offline completion and official delivery. Never enter private information in this test dashboard.</p>
+                <label for="recipient-template-select">Choose the Section 2 document
+                  <select id="recipient-template-select"><option value="">Select a template…</option></select>
+                </label>
+                <textarea id="recipient-template-text" rows="9" readonly aria-label="Unpopulated document template"></textarea>
+                <button class="button secondary" type="button" id="recipient-copy-template" disabled>Copy blank template</button>
+                <p id="recipient-template-note" class="hint" role="status" aria-live="polite">Nothing is submitted or saved by this tool.</p>
+              </div>
               <p class="recipient-caution">§2.08: PII breach notice within one hour; other violation or termination within four hours. Written breach/violation report within five calendar days of initial notification. §2.14 sets no numeric notice deadline for early voluntary termination.</p>
             </div>
           </div>

@@ -178,6 +178,18 @@ class AdminHttpTests(unittest.TestCase):
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("POST", "/api/incident-deadlines", data)[0], 403)
 
+    def test_section_two_templates_have_no_dispatch_or_approval(self):
+        status, data, _ = self.request("GET", "/api/recipient/templates")
+        self.assertEqual(status, 200)
+        self.assertGreaterEqual(len(data["templates"]), 8)
+        self.assertFalse(data["production_ready"])
+        self.assertTrue(all(not item["notice_sent"] for item in data["templates"]))
+        self.assertTrue(all(not item["FBI_approval_verified"] for item in data["templates"]))
+        self.assertIn("ARPOC", " ".join(item["body"] for item in data["templates"]))
+        self.assertEqual(self.request("GET", "/api/recipient/templates", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/recipient/templates")[0], 403)
+
     def test_section_two_catalog_requires_auth_and_shows_all_sections(self):
         status, data, _ = self.request("GET", "/api/recipient")
         self.assertEqual(status, 200)

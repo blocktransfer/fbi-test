@@ -208,6 +208,45 @@ async function runSectionOneAssessment(event) {
   }
 }
 
+let recipientTemplates = [];
+function showRecipientTemplates(data) {
+  recipientTemplates = data.templates;
+  const select = byId("recipient-template-select");
+  const selected = select.value;
+  select.replaceChildren();
+  const intro = document.createElement("option");
+  intro.value = "";
+  intro.textContent = "Select a template…";
+  select.append(intro);
+  for (const item of recipientTemplates) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.title + " · §§" + item.sections.join(", ");
+    select.append(option);
+  }
+  select.value = recipientTemplates.some(t => t.id === selected) ? selected : "";
+  changeRecipientTemplate();
+}
+function changeRecipientTemplate() {
+  const found = recipientTemplates.find(t => t.id === byId("recipient-template-select").value);
+  byId("recipient-template-text").value = found ? found.body : "";
+  byId("recipient-copy-template").disabled = !found;
+  byId("recipient-template-note").textContent = found
+    ? found.required_review + " This is a blank draft; no delivery has occurred."
+    : "Select a document; copies are not sent or stored.";
+}
+async function copyRecipientTemplate() {
+  const text = byId("recipient-template-text").value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    byId("recipient-template-note").textContent =
+      "Blank text copied. Complete and transmit only using your approved organizational channel.";
+  } catch (_) {
+    byId("recipient-template-note").textContent =
+      "Clipboard permission unavailable. Select the template text to copy manually.";
+  }
+}
 let recipientCatalog = null;
 
 function receiptLine(parent, title, content) {
@@ -327,13 +366,14 @@ async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne, recipient] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient")]);
+    const [status, log, register, sectionOne, recipient, templates] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
     sectionOneCatalog = sectionOne;
     renderDefinitions();
     showRecipient(recipient);
+    showRecipientTemplates(templates);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -456,6 +496,8 @@ byId("definition-query").addEventListener("input", renderDefinitions);
 byId("section-one-form").addEventListener("submit", runSectionOneAssessment);
 byId("incident-calculate").addEventListener("click", calculateIncident);
 byId("recipient-event").addEventListener("change", refreshRecipientFields);
+byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
+byId("recipient-copy-template").addEventListener("click", copyRecipientTemplate);
 byId("recipient-planner").addEventListener("submit", calculateRecipientDeadlines);
 byId("logout").addEventListener("click", logout);
 byId("accept-use").addEventListener("change", () => {
