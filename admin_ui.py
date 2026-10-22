@@ -24,6 +24,8 @@ from uuid import uuid4
 from audit_journal import AuditError, AuditJournal
 from security_controls import readiness_register
 from incident_deadlines import DeadlineError, incident_deadlines
+from channeling_definitions import definition_catalog
+from channeling_assessment import ContextError, assess_definitions
 
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
@@ -304,6 +306,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, self.server.state.status())
             elif path == "/api/readiness":
                 self._json(200, readiness_register())
+            elif path == "/api/section-one":
+                self._json(200, definition_catalog())
             elif path == "/api/activity":
                 with self.server.state.lock:
                     events = list(self.server.state.events)
@@ -338,7 +342,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -366,6 +370,10 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/incident-deadlines":
                 self._json(200, incident_deadlines(request))
+            elif path == "/api/section-one/assess":
+                assessment = assess_definitions(request)
+                self.server.state.audit.append("section_one_assessed", "validated")
+                self._json(200, assessment)
             elif path == "/api/preview":
                 if set(request) != {"padding"}:
                     raise SenderError("Unexpected preview fields")
@@ -383,7 +391,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(502, "Delivery unknown; do not retry without agency reconciliation")
         except AuditError:
             self._error(503, "Security audit unavailable; operation blocked; do not retry")
-        except DeadlineError as exc:
+        except (DeadlineError, ContextError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")

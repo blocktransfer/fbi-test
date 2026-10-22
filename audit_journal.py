@@ -25,7 +25,7 @@ class AuditError(Exception):
 EVENTS = frozenset({
     "auth_failure", "auth_lockout", "session_expired",
     "session_acknowledged", "logout", "synthetic_preview",
-    "gateway_started", "gateway_completed",
+    "gateway_started", "gateway_completed", "section_one_assessed",
 })
 OUTCOMES = frozenset({
     "denied", "locked", "expired", "acknowledged", "terminated",

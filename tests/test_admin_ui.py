@@ -152,6 +152,46 @@ class AdminHttpTests(unittest.TestCase):
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("POST", "/api/incident-deadlines", data)[0], 403)
 
+    def test_all_section_one_definitions_available_only_to_authenticated_user(self):
+        status, data, _ = self.request("GET", "/api/section-one")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["total"], 25)
+        self.assertEqual(data["entries"][0]["section"], "1.01")
+        self.assertEqual(data["entries"][-1]["section"], "1.25")
+        self.assertFalse(data["production_ready"])
+        self.assertEqual(self.request("GET", "/api/section-one", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/section-one")[0], 403)
+
+    def test_section_one_assessment_api_uses_strict_nonidentifying_schema(self):
+        from channeling_assessment import FIELDS
+        choices = {"role": "channeler", "recipient_kind": "government", "purpose": "licensing",
+                   "authority_basis": "federal_statute", "identification_method": "ten_flat"}
+        payload = {key: choices.get(key, False) for key in FIELDS}
+        status, result, _ = self.request("POST", "/api/section-one/assess", payload)
+        self.assertEqual(status, 200)
+        self.assertFalse(result["production_ready"])
+        self.assertTrue(result["classification"]["pii_indicated"])
+        self.assertFalse(result["classification"]["chri_indicated"])
+        self.assertEqual(self.state.status()["attempts"], 0)
+        status, _, _ = self.request(
+            "POST", "/api/section-one/assess", {**payload, "applicant_name": "not allowed"}
+        )
+        self.assertEqual(status, 400)
+        self.assertIn('"event":"section_one_assessed"', Path(self.audit_path).read_text())
+        self.assertNotIn("applicant_name", Path(self.audit_path).read_text())
+
+    def test_section_one_assessment_requires_system_notice(self):
+        from channeling_assessment import FIELDS
+        choices = {"role": "channeler", "recipient_kind": "government", "purpose": "licensing",
+                   "authority_basis": "federal_statute", "identification_method": "ten_flat"}
+        payload = {key: choices.get(key, False) for key in FIELDS}
+        self.assertEqual(
+            self.request("POST", "/api/section-one/assess", payload, token=False)[0], 401
+        )
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("POST", "/api/section-one/assess", payload)[0], 403)
+
     def test_security_readiness_catalog_is_never_certified(self):
         status, data, _ = self.request("GET", "/api/readiness")
         self.assertEqual(status, 200)
