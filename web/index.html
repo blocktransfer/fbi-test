@@ -16,6 +16,7 @@
         <a href="#testing">⌁ &nbsp; Test console</a>
         <a href="#controls">⬡ &nbsp; Readiness &amp; controls</a>
         <a href="#section-one">§ &nbsp; Section 1 definitions</a>
+        <a href="#recipient">▤ &nbsp; Section 2 recipient duties</a>
         <a href="#activity">◷ &nbsp; Activity log</a>
       </nav>
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
@@ -159,6 +160,51 @@
                 <button class="button secondary" type="submit" id="section-one-run">Check definitions against scenario</button>
               </form>
               <div id="section-one-output" class="scenario-result" role="status" aria-live="polite">No scenario assessed. Real FBI, III, CHRI and Rap Back operations remain disabled.</div>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="panel recipient-section" id="recipient" aria-labelledby="recipient-title">
+          <div class="panel-head"><div><div class="eyebrow">COMPACT COUNCIL · AUTHORIZED RECIPIENT / SECTION 2</div>
+            <h2 id="recipient-title">Authorized Recipient oversight</h2>
+            <p>Track §§2.01–2.14 without collecting legal contracts, employee contacts, or criminal history records.</p>
+          </div><span class="counter" id="recipient-count">Loading…</span></div>
+          <div class="warning recipient-warning"><span class="warning-icon">!</span><div><strong>Operator-reported evidence only</strong><p>Document reference codes and checkboxes are not proof of FBI permission, legal authority, training, notifications, or compliance. No notices are transmitted from this screen.</p></div><small>UNVERIFIED</small></div>
+          <div class="recipient-grid">
+            <div class="recipient-list-panel">
+              <div class="field-heading"><strong>Obligations &amp; documentary checkpoints</strong><span>31 controls · 14 sections</span></div>
+              <div id="recipient-controls" class="recipient-controls" aria-live="polite"><p class="hint">Open your authorized local session to load obligations.</p></div>
+            </div>
+            <div class="recipient-timeline">
+              <h3>Notice and milestone deadlines</h3>
+              <p class="subtle">Calculates deadlines from Section 2; timestamps are not saved. The actual required notices, reports, permissions and reviews must be completed outside this prototype.</p>
+              <form id="recipient-planner">
+                <label>Event type
+                  <select name="event" id="recipient-event">
+                    <option value="initial_outsourcing_approval">Initial outsourcing approval · ARSO appointment</option>
+                    <option value="arpoc_change">ARPOC change · §2.06</option>
+                    <option value="arso_change">ARSO change · §2.07</option>
+                    <option value="policy_update_notice">Standard / CJISSECPOL update · §2.03</option>
+                    <option value="pii_breach">PII breach discovery · §2.08</option>
+                    <option value="security_violation">Other security violation · §2.08</option>
+                    <option value="contract_termination">Contract termination discovered · §2.08</option>
+                    <option value="early_voluntary_termination">Early voluntary termination · §2.14</option>
+                  </select>
+                </label>
+                <label>Occurrence / discovery time (local)
+                  <input id="recipient-occurred" type="datetime-local" required>
+                </label>
+                <label>Initial notice sent (local, only for breach/violation written report)
+                  <input id="recipient-initial-notice" type="datetime-local">
+                </label>
+                <label>Contract renewal (local, if earlier than 60-day policy update deadline)
+                  <input id="recipient-renewal" type="datetime-local">
+                </label>
+                <button class="button secondary" id="recipient-calculate" type="submit">Calculate Section 2 deadlines</button>
+              </form>
+              <div class="recipient-output" id="recipient-output" role="status" aria-live="polite">Select an event to calculate its source-defined milestones.</div>
+              <p class="recipient-caution">§2.08: PII breach notice within one hour; other violation or termination within four hours. Written breach/violation report within five calendar days of initial notification. §2.14 sets no numeric notice deadline for early voluntary termination.</p>
             </div>
           </div>
         </section>

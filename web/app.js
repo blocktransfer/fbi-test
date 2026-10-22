@@ -208,16 +208,132 @@ async function runSectionOneAssessment(event) {
   }
 }
 
+let recipientCatalog = null;
+
+function receiptLine(parent, title, content) {
+  const p = document.createElement("p");
+  const b = document.createElement("strong");
+  b.textContent = title + ": ";
+  p.append(b, document.createTextNode(content));
+  parent.append(p);
+}
+
+function showRecipient(data) {
+  recipientCatalog = data.catalog;
+  const reported = data.progress.checks;
+  const list = byId("recipient-controls");
+  list.replaceChildren();
+  byId("recipient-count").textContent =
+    data.progress.reported_count + " / " + data.catalog.control_count + " reported · 0 verified";
+  for (const section of data.catalog.sections) {
+    const group = document.createElement("details");
+    group.className = "recipient-group";
+    const title = document.createElement("summary");
+    const matching = data.catalog.controls.filter(c => c.section === section);
+    const number = matching.filter(c => reported[c.id] && reported[c.id].reported).length;
+    title.textContent = "§" + section + " · " + number + "/" + matching.length + " reported";
+    group.append(title);
+    for (const control of matching) {
+      const row = document.createElement("div");
+      row.className = "recipient-check";
+      const name = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = Boolean(reported[control.id] && reported[control.id].reported);
+      name.append(checkbox, document.createTextNode(control.description));
+      const foot = document.createElement("small");
+      foot.textContent = "PDF p. " + control.pdf_page + (control.optional ? " · Optional right" : " · Duty") + " · Self-report only";
+      const meta = document.createElement("div");
+      meta.className = "recipient-entry";
+      const evidence = document.createElement("input");
+      evidence.type = "text";
+      evidence.maxLength = 64;
+      evidence.autocomplete = "off";
+      evidence.spellcheck = false;
+      evidence.placeholder = "Nonidentifying evidence code, e.g. DOC-2026-001";
+      evidence.setAttribute("aria-label", "Evidence reference for " + control.id);
+      evidence.value = reported[control.id]?.evidence_ref || "";
+      const save = document.createElement("button");
+      save.type = "button";
+      save.textContent = "Record";
+      save.className = "recipient-save";
+      const note = document.createElement("p");
+      note.className = "recipient-note";
+      note.setAttribute("aria-live", "polite");
+      save.addEventListener("click", async () => {
+        save.disabled = true;
+        try {
+          await api("/api/recipient/check", "POST", {
+            id: control.id,
+            reported: checkbox.checked,
+            evidence_ref: checkbox.checked ? evidence.value.trim() : null
+          });
+          const refreshed = await api("/api/recipient");
+          showRecipient(refreshed);
+        } catch (error) {
+          note.textContent = error.message;
+          note.className = "recipient-note error";
+          save.disabled = false;
+        }
+      });
+      meta.append(evidence, save);
+      row.append(name, foot, meta, note);
+      group.append(row);
+    }
+    list.append(group);
+  }
+}
+function refreshRecipientFields() {
+  const event = byId("recipient-event").value;
+  const incident = event === "pii_breach" || event === "security_violation";
+  byId("recipient-initial-notice").disabled = !incident;
+  byId("recipient-renewal").disabled = event !== "policy_update_notice";
+  if (!incident) byId("recipient-initial-notice").value = "";
+  if (event !== "policy_update_notice") byId("recipient-renewal").value = "";
+}
+async function calculateRecipientDeadlines(event) {
+  event.preventDefault();
+  const output = byId("recipient-output");
+  output.replaceChildren();
+  const occurred = byId("recipient-occurred").value;
+  if (!occurred) {
+    output.textContent = "Enter a valid occurrence or discovery timestamp.";
+    return;
+  }
+  const payload = {
+    event: byId("recipient-event").value,
+    occurred_at: new Date(occurred).toISOString()
+  };
+  const notice = byId("recipient-initial-notice").value;
+  const renewal = byId("recipient-renewal").value;
+  if (notice && !byId("recipient-initial-notice").disabled) payload.initial_notice_at = new Date(notice).toISOString();
+  if (renewal && !byId("recipient-renewal").disabled) payload.renewal_at = new Date(renewal).toISOString();
+  try {
+    const plan = await api("/api/recipient/deadlines", "POST", payload);
+    receiptLine(output, "Source", "§" + plan.section + " · PDF p. " + plan.pdf_page);
+    receiptLine(output, "Notice / milestone due", plan.external_due_utc
+      ? new Date(plan.external_due_utc).toLocaleString() : "Written notice required; no specified numeric deadline");
+    if (plan.requires_initial_notice_time) receiptLine(output, "Written report", "Enter initial notice time to calculate five-day due date");
+    else if (plan.written_report_due_utc) receiptLine(output, "Written report due", new Date(plan.written_report_due_utc).toLocaleString());
+    receiptLine(output, "Recipients", plan.recipients);
+    receiptLine(output, "Action", plan.instruction);
+    receiptLine(output, "Dispatch status", "No notice or report sent by the application");
+  } catch (error) {
+    output.textContent = error.message;
+  }
+}
+
 async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one")]);
+    const [status, log, register, sectionOne, recipient] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
     sectionOneCatalog = sectionOne;
     renderDefinitions();
+    showRecipient(recipient);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -332,11 +448,15 @@ async function logout() {
 }
 
 byId("incident-discovered").value = localDateInput(Date.now());
+byId("recipient-occurred").value = localDateInput(Date.now());
+refreshRecipientFields();
 byId("local-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 byId("refresh").addEventListener("click", refresh);
 byId("definition-query").addEventListener("input", renderDefinitions);
 byId("section-one-form").addEventListener("submit", runSectionOneAssessment);
 byId("incident-calculate").addEventListener("click", calculateIncident);
+byId("recipient-event").addEventListener("change", refreshRecipientFields);
+byId("recipient-planner").addEventListener("submit", calculateRecipientDeadlines);
 byId("logout").addEventListener("click", logout);
 byId("accept-use").addEventListener("change", () => {
   byId("acknowledge-use").disabled = !byId("accept-use").checked;

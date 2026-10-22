@@ -101,6 +101,18 @@ class AdminHttpTests(unittest.TestCase):
         self.assertIn(b'"/api/section-one/assess"', script)
         self.assertIn(b"textContent", script)
 
+    def test_section_two_dashboard_has_tracking_and_planner_controls(self):
+        status, html, _ = self.request("GET", "/", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'id="recipient-controls"', html)
+        self.assertIn(b'id="recipient-planner"', html)
+        self.assertIn(b'id="recipient-event"', html)
+        status, script, _ = self.request("GET", "/app.js", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'"/api/recipient/check"', script)
+        self.assertIn(b'"/api/recipient/deadlines"', script)
+        self.assertNotIn(b"innerHTML", script)
+
     def test_assets_served_without_token(self):
         for asset in ("/", "/app.css", "/app.js"):
             status, content, headers = self.request("GET", asset, token=False)
