@@ -155,6 +155,55 @@ remain disabled or outside the prototype.
 See [`docs/section-3-implementation.md`](docs/section-3-implementation.md)
 for each clause, source page, implemented function and external dependency.
 
+## Section 4 — FBI and Compact Officer oversight
+
+The November 29, 2023 Compact Council Channeling Outsourcing Standard,
+Section 4 (``4.01–4.10, printed pp. 8–9, PDF pp. 16–17), describes
+**external FBI and Compact Officer/Chief Administrator duties**. The
+dashboard includes **Section 4 FBI oversight** with 28 owner-only
+operator-reported checklist references, 3 deadline events, an aggregate
+sample-size estimator and nine blank review templates. No government
+action, authorization, audit, screening or approval is performed by
+this application.
+
+- `4.01: Track the written legal-authority response and FBI coordination.
+  `4.01(a) requires the combined state/federal representative-sample
+  audit program *before* permission, a first sample audit within one year
+  of the Channeler's first CHRI receipt, and at least triennial audits.
+- `4.02: Track current Standard/CJISSECPOL distribution to Channelers
+  no later than 60 calendar days after FBI update notification (unless
+  otherwise directed).
+- `4.03: Calculate the 90-calendar-day FBI audit certification
+  **and accompanying result-copy** deadline from first approved CHRI
+  receipt; show illustrative one-year and triennial audit dates.
+- `4.04: Calculate 24-hour FBI roster updates following CHRI-access
+  personnel changes. Actual criminal-history checks remain FBI-only.
+- ``4.05–4.10: Track only document references for FBI-assigned Recipient
+  OCA and Channeler ORI, site security, written Security Program and
+  Training Program approvals, contingency plans and network diagrams,
+  including FBI review/approval of proposed diagram modifications.
+- `4.01(a) sampling: Estimate separate Channeler and Recipient sample
+  counts with a conservative finite-population simple-random formula
+  using only population totals, confidence and margin. This is not an
+  official sampling design or a representative audit.
+
+The restricted local evidence store is
+`~/.blocktransfer-fbi-test/fbi-oversight-checklist.json`
+(or set `FBI_TEST_OVERSIGHT_PATH`), separate from ``2–3 tracking.
+No actual OCA/ORI, employee records, CHRI, security diagrams,
+approval documents or applicant data may be entered.
+No checked item ever becomes independently verified.
+All methods require existing admin authentication and notice acceptance.
+
+Available APIs: `GET /api/fbi-oversight`,
+`POST /api/fbi-oversight/check`,
+`POST /api/fbi-oversight/deadlines`,
+`POST /api/fbi-oversight/sample` and
+`GET /api/fbi-oversight/templates`.
+
+See [`docs/section-4-implementation.md`](docs/section-4-implementation.md)
+for the clause-by-clause implementation and explicit external duties.
+
 ## Local admin frontend
 
 Start the **local-only** administrative dashboard from the repository root:
