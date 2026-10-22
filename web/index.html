@@ -297,6 +297,16 @@
                   <button class="button secondary" type="submit">Calculate annual messaging milestone</button>
                 </form><div id="channeler-rapback-result" class="recipient-output" role="status" aria-live="polite"></div>
               </details>
+              <div class="channeler-templates">
+                <h3>Section 3 documents &amp; correspondence</h3>
+                <p class="subtle">Blank forms only. Copy for secure offline completion and review. No document upload, automatic notice, or FBI approval.</p>
+                <label>Select document
+                  <select id="channeler-template-select"><option value="">Select a template…</option></select>
+                </label>
+                <textarea id="channeler-template-text" rows="9" readonly aria-label="Blank Channeler policy template"></textarea>
+                <button class="button secondary" type="button" id="channeler-copy-template" disabled>Copy blank template</button>
+                <p id="channeler-template-feedback" class="hint" role="status" aria-live="polite">Only the unpopulated template text is copied.</p>
+              </div>
               <p class="recipient-caution">§3.15: Channeler written security-violation reports are due within five calendar days of <strong>discovery</strong>, unlike the Authorized Recipient clock in §2.08. §3.23: the Channeler relays validation messages but cannot validate for the Recipient.</p>
             </div>
           </div>

@@ -247,6 +247,45 @@ async function copyRecipientTemplate() {
       "Clipboard permission unavailable. Select the template text to copy manually.";
   }
 }
+let channelerTemplateCatalog = [];
+function showChannelerTemplates(data) {
+  channelerTemplateCatalog = data.templates;
+  const select = byId("channeler-template-select");
+  const oldValue = select.value;
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Select a template…";
+  select.append(placeholder);
+  for (const record of data.templates) {
+    const option = document.createElement("option");
+    option.value = record.id;
+    option.textContent = record.title + " · " + record.sections.join(", ");
+    select.append(option);
+  }
+  select.value = data.templates.some(x => x.id === oldValue) ? oldValue : "";
+  chooseChannelerTemplate();
+}
+function chooseChannelerTemplate() {
+  const record = channelerTemplateCatalog.find(x => x.id === byId("channeler-template-select").value);
+  byId("channeler-template-text").value = record ? record.body : "";
+  byId("channeler-copy-template").disabled = !record;
+  byId("channeler-template-feedback").textContent = record ?
+    "Blank template only. No documents have been prepared or delivered." :
+    "Only the unpopulated template text is copied.";
+}
+async function copyChannelerTemplate() {
+  const body = byId("channeler-template-text").value;
+  if (!body) return;
+  try {
+    await navigator.clipboard.writeText(body);
+    byId("channeler-template-feedback").textContent =
+      "Blank form copied. Complete using approved organizational records and communication channels.";
+  } catch (_) {
+    byId("channeler-template-feedback").textContent =
+      "Clipboard access unavailable; select and copy the template text manually.";
+  }
+}
 function channelerTime(value) {
   return value ? new Date(value).toISOString() : null;
 }
@@ -516,7 +555,7 @@ async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne, recipient, templates, channeler] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler")]);
+    const [status, log, register, sectionOne, recipient, templates, channeler, channelerForms] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler"), api("/api/channeler/templates")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
@@ -525,6 +564,7 @@ async function refresh() {
     showRecipient(recipient);
     showRecipientTemplates(templates);
     showChanneler(channeler);
+    showChannelerTemplates(channelerForms);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -659,6 +699,8 @@ for (const formName of ["deadline","retention","training","rapback"]) {
   byId("channeler-" + formName + "-form").addEventListener("submit", runChannelerPlan);
 }
 byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
+byId("channeler-template-select").addEventListener("change", chooseChannelerTemplate);
+byId("channeler-copy-template").addEventListener("click", copyChannelerTemplate);
 byId("recipient-copy-template").addEventListener("click", copyRecipientTemplate);
 byId("recipient-planner").addEventListener("submit", calculateRecipientDeadlines);
 byId("logout").addEventListener("click", logout);

@@ -31,6 +31,7 @@ from recipient_checklist import ChecklistError, RecipientChecklist
 from recipient_templates import template_catalog
 from channeler_policy import catalog as channeler_catalog
 from channeler_checklist import ChannelerChecklist
+from channeler_templates import template_catalog as channeler_templates
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -327,6 +328,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/channeler/templates":
+                self._json(200, channeler_templates())
             elif path == "/api/channeler":
                 try:
                     progress = self.server.state.channeler.summary()

@@ -206,6 +206,17 @@ class AdminHttpTests(unittest.TestCase):
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("GET", "/api/recipient/templates")[0], 403)
 
+    def test_channeler_templates_are_blank_and_not_transmitted(self):
+        status, data, _ = self.request("GET", "/api/channeler/templates")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["templates"]), 12)
+        self.assertFalse(data["production_ready"])
+        self.assertTrue(all(not x["message_sent"] for x in data["templates"]))
+        self.assertTrue(all(not x["fbi_approval_verified"] for x in data["templates"]))
+        self.assertEqual(self.request("GET", "/api/channeler/templates", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/channeler/templates")[0], 403)
+
     def test_section_three_catalog_is_separate_and_secured(self):
         status, data, _ = self.request("GET", "/api/channeler")
         self.assertEqual(status, 200)
