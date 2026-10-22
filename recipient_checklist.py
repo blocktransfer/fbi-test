@@ -37,6 +37,9 @@ def _private_parent(path: Path) -> None:
 class RecipientChecklist:
     """Single-process, atomic replacement of nonidentifying operator records."""
 
+    allowed_keys = frozenset(SPEC)
+    event_prefix = "recipient"
+
     def __init__(self, filename: str | Path):
         self.path = Path(filename).expanduser().absolute()
         self.lock = threading.Lock()
@@ -61,7 +64,7 @@ class RecipientChecklist:
             doc = json.loads(blob)
             if type(doc) is not dict or set(doc) != {"schema", "checks"} or doc["schema"] != 1:
                 raise ChecklistError("Unexpected checklist schema")
-            if type(doc["checks"]) is not dict or set(doc["checks"]) - SPEC.keys():
+            if type(doc["checks"]) is not dict or set(doc["checks"]) - self.allowed_keys:
                 raise ChecklistError("Unknown checklist entries")
             for entry in doc["checks"].values():
                 if (type(entry) is not dict or set(entry) != {"reported", "evidence_ref", "recorded_at"}
@@ -95,8 +98,8 @@ class RecipientChecklist:
         if type(data) is not dict or set(data) != {"id", "reported", "evidence_ref"}:
             raise ChecklistError("Expected checklist ID, reported flag and evidence reference")
         key, reported, reference = data["id"], data["reported"], data["evidence_ref"]
-        if type(key) is not str or key not in SPEC:
-            raise ChecklistError("Unknown Section 2 checklist ID")
+        if type(key) is not str or key not in self.allowed_keys:
+            raise ChecklistError("Unknown policy checklist ID")
         if type(reported) is not bool:
             raise ChecklistError("Reported state must be true or false")
         if reported:
@@ -116,7 +119,7 @@ class RecipientChecklist:
             if len(serialized) > MAX_SIZE:
                 raise ChecklistError("Checklist capacity exceeded")
             # Audited attempt must exist before applying a state transition.
-            audit.append("recipient_check_requested", "started")
+            audit.append(f"{self.event_prefix}_check_requested", "started")
             temp = self.path.with_name("." + self.path.name + "." + secrets.token_hex(10) + ".tmp")
             fd = -1
             try:
@@ -139,7 +142,7 @@ class RecipientChecklist:
                     os.close(fd)
                 if temp.exists():
                     temp.unlink()
-            audit.append("recipient_check_saved", "recorded")
+            audit.append(f"{self.event_prefix}_check_saved", "recorded")
             return {
                 "id": key, "reported": reported,
                 "recorded_at": doc["checks"][key]["recorded_at"],
