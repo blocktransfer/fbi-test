@@ -359,6 +359,26 @@
                 </div>
               </div>
               <div class="oversight-panel">
+                <h3>Combined representative-audit sample planning · §4.01(a)</h3>
+                <p class="subtle">Counts-only finite-population estimate for simple random sampling. Does not select any Channelers/Recipients or satisfy the requirement for a generally accepted statistical sampling program.</p>
+                <form id="oversight-sample-form">
+                  <label>Number of Channelers in scope
+                    <input name="channeler_population" type="number" min="0" max="1000000" step="1" value="100" required>
+                  </label>
+                  <label>Number of Authorized Recipients in scope
+                    <input name="recipient_population" type="number" min="0" max="1000000" step="1" value="500" required>
+                  </label>
+                  <label>Illustrative confidence level
+                    <select name="confidence_percent"><option value="90">90%</option><option value="95" selected>95%</option><option value="99">99%</option></select>
+                  </label>
+                  <label>Illustrative margin of error
+                    <select name="margin_percent"><option value="2">±2%</option><option value="5" selected>±5%</option><option value="10">±10%</option></select>
+                  </label>
+                  <button class="button secondary" type="submit">Estimate sample sizes</button>
+                </form>
+                <div id="oversight-sample-result" class="recipient-output" role="status" aria-live="polite">No real entities will be selected or recorded.</div>
+              </div>
+              <div class="oversight-panel">
                 <h3>Official-action document outlines</h3>
                 <p class="subtle">Blank drafts for human use outside the application. These do not generate an official decision, certification or written approval.</p>
                 <label for="oversight-template">Choose blank template</label>

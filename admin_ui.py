@@ -37,6 +37,7 @@ from fbi_oversight import catalog as oversight_catalog
 from fbi_oversight_checklist import OversightChecklist
 from fbi_oversight_schedule import deadlines as oversight_deadlines, OversightInputError
 from fbi_oversight_templates import template_catalog as oversight_templates
+from fbi_oversight_sampling import estimate as oversight_sample_estimate, SamplingInputError
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -400,7 +401,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference", "/api/fbi-oversight/check", "/api/fbi-oversight/deadlines"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference", "/api/fbi-oversight/check", "/api/fbi-oversight/deadlines", "/api/fbi-oversight/sample"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -436,6 +437,10 @@ class AdminHandler(BaseHTTPRequestHandler):
                 plan = oversight_deadlines(request)
                 self.server.state.audit.append("fbi_oversight_planned", "validated")
                 self._json(200, plan)
+            elif path == "/api/fbi-oversight/sample":
+                estimate = oversight_sample_estimate(request)
+                self.server.state.audit.append("fbi_oversight_planned", "validated")
+                self._json(200, estimate)
             elif path == "/api/channeler/check":
                 self._json(200, self.server.state.channeler.update(
                     request, self.server.state.audit
@@ -490,7 +495,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(503 if "Checklist" in str(exc) or "persist" in str(exc)
                         or "parse" in str(exc) or "securely" in str(exc) else 400,
                         "Recipient checklist unavailable" if "Checklist" in str(exc) else str(exc))
-        except (DeadlineError, ContextError, RecipientError, ChannelerInputError, OversightInputError) as exc:
+        except (DeadlineError, ContextError, RecipientError, ChannelerInputError, OversightInputError, SamplingInputError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")

@@ -578,6 +578,34 @@ async function calculateRecipientDeadlines(event) {
   }
 }
 
+async function estimateOversightSample(event) {
+  event.preventDefault();
+  const target = byId("oversight-sample-result");
+  const form = byId("oversight-sample-form");
+  const request = { method: "simple_random" };
+  for (const field of form.elements) {
+    if (!field.name) continue;
+    request[field.name] = Number(field.value);
+  }
+  try {
+    const result = await api("/api/fbi-oversight/sample", "POST", request);
+    target.replaceChildren();
+    const lines = [
+      ["Channeler sample estimate", String(result.channeler_sample_estimate)],
+      ["Authorized Recipient sample estimate", String(result.recipient_sample_estimate)],
+      ["Actual audit sampling program approved", "No"],
+      ["Methodology limitation", result.limitations],
+    ];
+    for (const [key, value] of lines) {
+      const line = document.createElement("p");
+      const label = document.createElement("strong");
+      label.textContent = key + ": ";
+      line.append(label, document.createTextNode(value));
+      target.append(line);
+    }
+  } catch (error) { target.textContent = error.message; }
+}
+
 let oversightTemplates = [];
 
 function showOversight(payload) {
@@ -883,6 +911,7 @@ for (const formName of ["deadline","retention","training","rapback"]) {
 byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
 byId("channeler-template-select").addEventListener("change", chooseChannelerTemplate);
 byId("oversight-planner").addEventListener("submit", calculateOversight);
+byId("oversight-sample-form").addEventListener("submit", estimateOversightSample);
 byId("oversight-template").addEventListener("change", selectOversightTemplate);
 byId("oversight-copy").addEventListener("click", copyOversightTemplate);
 byId("channeler-check-dissemination").addEventListener("click", () => checkChannelerSchema("dissemination"));
