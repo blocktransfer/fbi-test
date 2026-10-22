@@ -283,6 +283,18 @@ class AdminHttpTests(unittest.TestCase):
         })[0], 400)
         self.assertEqual(self.request("POST", "/api/fbi-oversight/sample", request, token=False)[0], 401)
 
+    def test_section_five_templates_are_blank_not_legal_actions(self):
+        status, data, _ = self.request("GET", "/api/misc/templates")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["templates"]), 6)
+        self.assertFalse(data["postal_address_current_verified"])
+        self.assertTrue(all(not x["sent"] for x in data["templates"]))
+        self.assertTrue(all(not x["government_decision"] for x in data["templates"]))
+        self.assertIn("1000 Custer Hollow Road", data["templates"][0]["body"])
+        self.assertEqual(self.request("GET", "/api/misc/templates", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/misc/templates")[0], 403)
+
     def test_section_five_catalog_is_protected_and_no_authority_granted(self):
         status, data, _ = self.request("GET", "/api/misc")
         self.assertEqual(status, 200)

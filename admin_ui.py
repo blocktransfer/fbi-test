@@ -40,6 +40,7 @@ from fbi_oversight_templates import template_catalog as oversight_templates
 from fbi_oversight_sampling import estimate as oversight_sample_estimate, SamplingInputError
 from misc_provisions import catalog as misc_catalog
 from misc_checklist import MiscChecklist
+from misc_templates import template_catalog as misc_templates
 from misc_guardrails import (
     MiscInputError, scope_check, changes_check, government_power_check,
     postage_instructions,
@@ -352,6 +353,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/misc/templates":
+                self._json(200, misc_templates())
             elif path == "/api/misc":
                 try:
                     progress = self.server.state.misc.summary()
