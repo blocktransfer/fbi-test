@@ -33,6 +33,9 @@ from channeler_policy import catalog as channeler_catalog
 from channeler_checklist import ChannelerChecklist
 from channeler_templates import template_catalog as channeler_templates
 from channeler_metadata import dissemination_dry_run, rapback_link_dry_run
+from fbi_oversight import catalog as oversight_catalog
+from fbi_oversight_checklist import OversightChecklist
+from fbi_oversight_schedule import deadlines as oversight_deadlines, OversightInputError
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -86,6 +89,12 @@ class AdminState:
             self.env.get(
                 "FBI_TEST_CHANNELER_PATH",
                 str(default_audit.with_name("channeler-checklist.json")),
+            )
+        )
+        self.oversight = OversightChecklist(
+            self.env.get(
+                "FBI_TEST_OVERSIGHT_PATH",
+                str(default_audit.with_name("fbi-oversight-checklist.json")),
             )
         )
         self.token = secrets.token_urlsafe(32) if token is None else token
@@ -329,6 +338,13 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/fbi-oversight":
+                try:
+                    progress = self.server.state.oversight.summary()
+                except ChecklistError:
+                    self._error(503, "FBI oversight checklist unavailable")
+                    return
+                self._json(200, {"catalog": oversight_catalog(), "progress": progress})
             elif path == "/api/channeler/templates":
                 self._json(200, channeler_templates())
             elif path == "/api/channeler":
@@ -381,7 +397,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference", "/api/fbi-oversight/check", "/api/fbi-oversight/deadlines"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -409,6 +425,14 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/incident-deadlines":
                 self._json(200, incident_deadlines(request))
+            elif path == "/api/fbi-oversight/check":
+                self._json(200, self.server.state.oversight.update(
+                    request, self.server.state.audit
+                ))
+            elif path == "/api/fbi-oversight/deadlines":
+                plan = oversight_deadlines(request)
+                self.server.state.audit.append("fbi_oversight_planned", "validated")
+                self._json(200, plan)
             elif path == "/api/channeler/check":
                 self._json(200, self.server.state.channeler.update(
                     request, self.server.state.audit
@@ -463,7 +487,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(503 if "Checklist" in str(exc) or "persist" in str(exc)
                         or "parse" in str(exc) or "securely" in str(exc) else 400,
                         "Recipient checklist unavailable" if "Checklist" in str(exc) else str(exc))
-        except (DeadlineError, ContextError, RecipientError, ChannelerInputError) as exc:
+        except (DeadlineError, ContextError, RecipientError, ChannelerInputError, OversightInputError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")

@@ -23,10 +23,12 @@ class AdminHttpTests(unittest.TestCase):
         Path(self.audit_directory.name).chmod(0o700)
         self.recipient_path = str(Path(self.audit_directory.name) / "recipient.json")
         self.channeler_path = str(Path(self.audit_directory.name) / "channeler.json")
+        self.oversight_path = str(Path(self.audit_directory.name) / "oversight.json")
         self.state = AdminState(
             env={"FBI_TEST_AUDIT_PATH": self.audit_path,
                  "FBI_TEST_RECIPIENT_PATH": self.recipient_path,
-                 "FBI_TEST_CHANNELER_PATH": self.channeler_path},
+                 "FBI_TEST_CHANNELER_PATH": self.channeler_path,
+                 "FBI_TEST_OVERSIGHT_PATH": self.oversight_path},
             token="test-" + "x" * 40
         )
         self.server = AdminServer(port=0, state=self.state)
@@ -243,6 +245,59 @@ class AdminHttpTests(unittest.TestCase):
             **refs, "birth_date":"Private"
         })[0], 400)
         self.assertFalse(Path(self.channeler_path).exists())
+
+    def test_section_four_oversight_catalog_and_authentication(self):
+        code, result, _ = self.request("GET", "/api/fbi-oversight")
+        self.assertEqual(code, 200)
+        self.assertEqual(result["catalog"]["clause_count"], 11)
+        self.assertEqual(result["catalog"]["check_count"], 28)
+        self.assertEqual(result["progress"]["reported_count"], 0)
+        self.assertFalse(result["catalog"]["FBI_approval_verified"])
+        self.assertEqual(self.request("GET", "/api/fbi-oversight", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/fbi-oversight")[0], 403)
+
+    def test_section_four_claims_never_become_fbi_approval(self):
+        request = {"id": "4.07.written_security_approval",
+                   "reported": True, "evidence_ref": "UNVERIFIED-2026-001"}
+        code, result, _ = self.request("POST", "/api/fbi-oversight/check", request)
+        self.assertEqual(code, 200)
+        self.assertFalse(result["independently_verified"])
+        code, records, _ = self.request("GET", "/api/fbi-oversight")
+        self.assertEqual(records["progress"]["reported_count"], 1)
+        self.assertFalse(records["progress"]["FBI_approval_verified"])
+        self.assertEqual(Path(self.oversight_path).stat().st_mode & 0o777, 0o600)
+        self.assertFalse(Path(self.channeler_path).exists())
+        self.assertFalse(Path(self.recipient_path).exists())
+        audit = Path(self.audit_path).read_text()
+        self.assertIn("fbi_oversight_check_saved", audit)
+        self.assertNotIn("UNVERIFIED-2026-001", audit)
+
+    def test_section_four_rejects_real_agency_identifiers_and_cross_role_keys(self):
+        for payload in (
+            {"id": "4.05.recipient_oca", "reported": True, "evidence_ref": "actual OCA"},
+            {"id": "4.05.channeler_ori", "reported": True, "evidence_ref": "DOC-2026", "ORI": "actual"},
+            {"id": "3.05.fbi_written_program_approval", "reported": True, "evidence_ref": "DOC-2026"},
+            {"id": "4.05.recipient_oca", "reported": True, "evidence_ref": None},
+        ):
+            self.assertEqual(self.request("POST", "/api/fbi-oversight/check", payload)[0], 400)
+        self.assertFalse(Path(self.oversight_path).exists())
+
+    def test_section_four_90_day_audit_timeline_is_dry_run_only(self):
+        payload = {"event": "first_approved_chri_receipt",
+                   "occurred_at": "2026-10-22T12:00:00Z",
+                   "as_of": "2026-10-23T12:00:00Z"}
+        code, result, _ = self.request("POST", "/api/fbi-oversight/deadlines", payload)
+        self.assertEqual(code, 200)
+        self.assertEqual(result["fbi_initial_audit_and_certification_due_utc"],
+                         "2027-01-20T12:00:00+00:00")
+        self.assertFalse(result["audits_conducted"])
+        self.assertFalse(result["certification_delivered"])
+        self.assertEqual(self.request("POST", "/api/fbi-oversight/deadlines", {
+            **payload, "employee_name": "Private"
+        })[0], 400)
+        self.assertFalse(Path(self.oversight_path).exists())
+        self.assertIn("fbi_oversight_planned", Path(self.audit_path).read_text())
 
     def test_section_three_catalog_is_separate_and_secured(self):
         status, data, _ = self.request("GET", "/api/channeler")

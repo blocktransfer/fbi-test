@@ -28,6 +28,8 @@ EVENTS = frozenset({
     "gateway_started", "gateway_completed", "section_one_assessed",
     "recipient_check_requested", "recipient_check_saved", "recipient_deadline_planned",
     "channeler_check_requested", "channeler_check_saved", "channeler_planned",
+    "fbi_oversight_check_requested", "fbi_oversight_check_saved",
+    "fbi_oversight_planned",
 })
 OUTCOMES = frozenset({
     "denied", "locked", "expired", "acknowledged", "terminated",
