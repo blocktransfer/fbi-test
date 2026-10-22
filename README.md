@@ -73,6 +73,41 @@ checkbox reporting a written agreement, appointment, or FBI selection is
 See [`docs/section-1-implementation.md`](docs/section-1-implementation.md)
 for each definition's implementation boundary.
 
+## Section 2 Authorized Recipient workflows
+
+The 2023 Compact Council Channeling Outsourcing Standard, Section 2
+(``2.01–2.14, PDF pp. 8–10), governs **Authorized Recipient**
+responsibilities. The dashboard's **Section 2 recipient duties** view
+supports 31 documentary checklist items with source citations, eight
+deadline-event types, and nine blank correspondence templates.
+
+Checklist state is saved in an owner-only local file at
+`~/.blocktransfer-fbi-test/recipient-checklist.json`. Override the path
+using `FBI_TEST_RECIPIENT_PATH`. Record only nonidentifying evidence
+reference codes such as `CONTRACT-2026-001`; do not enter contracts,
+personnel contacts, applicant details, fingerprints, incidents, PII or CHRI.
+Files require 0600 permissions and the parent directory 0700. Mutations
+require an audit journal write. No checkbox proves independent approval.
+
+Deadlines include:
+- ARPOC change (`2.06) and ARSO appointment/change (`2.07): **30 days**.
+- Policy updates (`2.03): contract, renewal, or 60-calendar-day update
+  notification window, whichever occurs sooner.
+- PII breaches (`2.08): notification within **one hour** of discovery.
+- Other violations or contract termination (`2.08): **four hours**.
+- Written breach/violation report (`2.08): **five calendar days after
+  initial notification**, not five days after discovery.
+- Early voluntary termination (`2.14): written notice required but no
+  numeric deadline is given in that subsection.
+
+The API supports authenticated `GET /api/recipient`, `POST
+/api/recipient/check`, `POST /api/recipient/deadlines` and `GET
+/api/recipient/templates`. These never authorize CHRI exchange, send
+notices, verify authority, or reinstate a suspended operation.
+
+See [`docs/section-2-implementation.md`](docs/section-2-implementation.md)
+for the clause-by-clause implementation matrix and external obligations.
+
 ## Local admin frontend
 
 Start the **local-only** administrative dashboard from the repository root:

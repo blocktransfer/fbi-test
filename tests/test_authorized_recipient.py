@@ -32,6 +32,18 @@ class RecipientPolicyTests(unittest.TestCase):
     def plan(self, event, occurred="2026-10-22T12:00:00Z", **args):
         return deadlines({"event":event,"occurred_at":occurred,**args})
 
+    def test_template_catalog_covers_all_section_two_subsections(self):
+        from recipient_templates import template_catalog
+        result = template_catalog()
+        templates = result["templates"]
+        self.assertEqual(len(templates), 9)
+        self.assertFalse(result["production_ready"])
+        self.assertFalse(result["contains_actual_personal_data"])
+        self.assertTrue(all(not t["notice_sent"] for t in templates))
+        covered = {section for t in templates for section in t["sections"]}
+        for n in range(1, 15):
+            self.assertIn(f"2.{n:02d}", covered)
+
     def test_initial_approval_requires_arso_notice_within_30_days(self):
         plan=self.plan("initial_outsourcing_approval")
         self.assertEqual(plan["section"],"2.07")
