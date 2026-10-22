@@ -30,6 +30,49 @@ agencies, rather than a public HTTP endpoint.
 - Offline unit tests and a GitHub Actions workflow. No live biometric or
   personally identifiable information is included in repository fixtures.
 
+## Compact Council Section 1 domain support
+
+Section 1 (PDF pp. 3–7) of the **November 29, 2023 Security and
+Management Control Outsourcing Standard for Channeling** defines 25 legal,
+security and workflow terms. These are *definitions*, not 25 separately
+grantable permissions or services. The application implements each term in a
+read-only, source-page-referenced glossary and applies enforceable distinctions
+to a dry-run assessment.
+
+- **Policy catalog:** ``1.01–1.25 via `GET /api/section-one` (admin access and
+  system-use acknowledgment required).
+- **Nonidentifying scenario assessment:** `POST /api/section-one/assess`
+  accepts only enumerated roles and purposes plus boolean flags. It rejects
+  names, fingerprint bytes, raw CHRI, applicant records, unknown fields, and
+  non-boolean values. No assessment inputs are retained; only the fact that
+  an assessment occurred is entered in the local audit journal.
+- **Roles and authority (``1.02–1.07, 1.11, 1.17):** identifies contradictory
+  or missing self-reported prerequisites. ARPOC cannot be outsourced;
+  State Chief Administrator is a repository role; Channeler selection,
+  agreements, and lawful authority must be established independently.
+- **Data distinction (``1.08, 1.19):** fingerprint identification data alone
+  does not automatically constitute CHRI but can still be PII. Classification
+  is based on declared flags and is not a certified determination.
+- **Identification (`1.22):** name-only comparison never establishes positive
+  identification. Qualifying ten-rolled/ten-flat capture is not itself proof
+  of a successful fingerprint comparison.
+- **Restricted actions (``1.01, 1.14–1.15, 1.23–1.24):** no direct III access,
+  no real NGI fingerprint submission/CHRI dissemination, no Rap Back messaging,
+  and no representation that media has been sanitized.
+- **Governance and event definitions (``1.09–1.10, 1.12–1.13, 1.16, 1.18,
+  1.20–1.21, 1.25):** preserved as source-referenced terms; determining
+  organizational compliance and incident handling requires actual evidence
+  and authorized human decision-makers.
+
+Use the dashboard's **Section 1 definitions** navigation item to browse all
+25 terms, filter them and run the nonidentifying role/data worksheet. Any
+checkbox reporting a written agreement, appointment, or FBI selection is
+**not evidence** that the approval exists. The model *always* reports
+`production_ready=false` and never enables actual submissions.
+
+See [`docs/section-1-implementation.md`](docs/section-1-implementation.md)
+for each definition's implementation boundary.
+
 ## Local admin frontend
 
 Start the **local-only** administrative dashboard from the repository root:

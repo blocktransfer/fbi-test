@@ -88,7 +88,7 @@ def assess_definitions(request: dict) -> dict:
     if request["chief_admin_role_applies"]:
         finding(
             "1.07 / 1.11", request["chief_admin_repository_employee"],
-            "Repository employment is reported for the chief/designee, but remains unverified."
+            "Repository employment is reported for the chief/designee; a state Compact Officer designee must also be a regular full-time repository employee, and both facts remain unverified."
             if request["chief_admin_repository_employee"] else
             "Chief Administrator/eligible state Compact Officer designee must be a repository employee."
         )
