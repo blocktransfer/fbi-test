@@ -58,3 +58,32 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .incident-planner button{margin-top:14px}
 .incident-results{margin-top:14px;border-top:1px solid #e2eaf0;padding-top:6px}
 .incident-results p{margin:6px 0;font-size:10px}
+
+/* Compact Council Section 1: read-only glossary and in-memory scenario worksheet. */
+.section-one{margin-top:20px}
+.definition-grid{display:grid;grid-template-columns:minmax(280px,.95fr) minmax(330px,1.05fr);gap:0}
+.definition-browser{padding:22px;border-right:1px solid #edf1f4;min-width:0}
+.definition-browser input[type=search]{width:100%;padding:11px 13px;border:1px solid #dbe4ed;border-radius:8px;font:inherit;font-size:12px;margin:0 0 16px;background:#fbfcfd}
+.definition-browser input:focus-visible{outline:2px solid #2ca88b}
+.definition-list{max-height:580px;overflow-y:auto;padding-right:6px}
+.definition-card{border:1px solid #e6edf0;border-radius:9px;padding:11px 13px;margin-bottom:9px;background:#fbfcfd}
+.definition-card summary{cursor:pointer;display:flex;gap:10px;align-items:center;color:#354d63;font-size:11px}
+.definition-card summary strong{font-size:11px;line-height:1.45}
+.section-tag{background:#e7f5ef;border-radius:5px;padding:6px 8px;color:#228d75;font-size:10px;font-weight:850;white-space:nowrap}
+.definition-card p{font-size:10.5px;line-height:1.65;color:#607489;margin:12px 0 7px}
+.definition-card small{font-size:9px;color:#949dad}
+.scenario{padding:22px;min-width:0}
+.scenario h3{font-size:14px;letter-spacing:-.2px;margin-bottom:8px}
+.scenario-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.scenario-fields label{display:grid;gap:7px;font-weight:730;font-size:10px;color:#516477}
+.scenario-fields select{min-width:0;border:1px solid #dbe4ed;border-radius:7px;padding:9px 8px;background:#fbfcfd;color:#34465e;font:inherit;font-size:11px}
+.scenario-checks{margin:14px 0 17px}
+.scenario-checks h4,.scenario-result h4{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#6e8192;margin:14px 0 10px}
+.scenario-checks label{display:flex;gap:9px;align-items:flex-start;font-size:10.5px;color:#5d7185;line-height:1.5;margin:8px 0}
+.scenario-checks input{margin:2px 0;accent-color:#16876e;flex-shrink:0}
+.scenario-result{margin-top:15px;padding:14px;border:1px solid #e0eaf0;background:#f9fbfc;border-radius:8px;color:#708399;font-size:10.5px;line-height:1.65;max-height:290px;overflow:auto}
+.scenario-result p{margin:4px 0 9px}
+.scenario-result .scenario-issue{color:#b0713f}
+.scenario-result .scenario-note{color:#657c88}
+@media(max-width:1050px){.definition-grid{grid-template-columns:1fr}.definition-browser{border-right:0;border-bottom:1px solid #edf1f4}.definition-list{max-height:340px}}
+@media(max-width:450px){.scenario-fields{grid-template-columns:1fr}.scenario,.definition-browser{padding:17px}}

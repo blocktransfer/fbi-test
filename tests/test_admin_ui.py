@@ -87,6 +87,17 @@ class AdminHttpTests(unittest.TestCase):
     def test_loopback_only(self):
         self.assertEqual(self.server.server_address[0], "127.0.0.1")
 
+    def test_section_one_frontend_has_reference_and_dry_run_controls(self):
+        status, page, _ = self.request("GET", "/", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'id="definition-list"', page)
+        self.assertIn(b'id="section-one-form"', page)
+        self.assertIn(b'name="has_biometric_identifiers"', page)
+        status, script, _ = self.request("GET", "/app.js", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'"/api/section-one/assess"', script)
+        self.assertIn(b"textContent", script)
+
     def test_assets_served_without_token(self):
         for asset in ("/", "/app.css", "/app.js"):
             status, content, headers = self.request("GET", asset, token=False)

@@ -120,14 +120,104 @@ function showReadiness(register) {
   }
 }
 
+let sectionOneCatalog = null;
+
+function renderDefinitions() {
+  const root = byId("definition-list");
+  root.replaceChildren();
+  if (!sectionOneCatalog) return;
+  const query = byId("definition-query").value.toLowerCase().trim();
+  const matches = sectionOneCatalog.entries.filter((entry) =>
+    [entry.section, entry.term, entry.summary].some((v) => v.toLowerCase().includes(query))
+  );
+  byId("definition-count").textContent = matches.length + " / " + sectionOneCatalog.total + " terms";
+  if (!matches.length) {
+    const msg = document.createElement("p");
+    msg.className = "hint";
+    msg.textContent = "No matching definitions.";
+    root.append(msg);
+    return;
+  }
+  for (const entry of matches) {
+    const card = document.createElement("details");
+    card.className = "definition-card";
+    const head = document.createElement("summary");
+    const section = document.createElement("span");
+    section.className = "section-tag";
+    section.textContent = entry.section;
+    const term = document.createElement("strong");
+    term.textContent = entry.term;
+    head.append(section, term);
+    const desc = document.createElement("p");
+    desc.textContent = entry.summary;
+    const source = document.createElement("small");
+    source.textContent = "Outsourcing Standard · PDF p. " + entry.pdf_pages + " · " +
+      (entry.implementation === "external" ? "External requirement" : "Definition-based guardrail");
+    card.append(head, desc, source);
+    root.append(card);
+  }
+}
+
+function showSectionOneResult(result) {
+  const root = byId("section-one-output");
+  root.replaceChildren();
+  const flags = [
+    ["CHRI indicated", result.classification.chri_indicated ? "Yes, based on category flags" : "No, based on category flags"],
+    ["PII indicated", result.classification.pii_indicated ? "Yes, based on category flags" : "No, based on category flags"],
+    ["Positive identification established", "No · requires a reliable external comparison"],
+    ["Production use authorized", "No · FBI/agency approval unverified"]
+  ];
+  for (const [label, value] of flags) {
+    const line = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    line.append(strong, document.createTextNode(value));
+    root.append(line);
+  }
+  const note = document.createElement("p");
+  note.textContent = result.identity.note;
+  root.append(note);
+  const title = document.createElement("h4");
+  title.textContent = "Role and authority findings (unverified)";
+  root.append(title);
+  for (const f of result.findings) {
+    const item = document.createElement("p");
+    item.className = f.state === "blocked_by_reported_facts" ? "scenario-issue" : "scenario-note";
+    item.textContent = "§" + f.section + ": " + f.explanation;
+    root.append(item);
+  }
+}
+
+async function runSectionOneAssessment(event) {
+  event.preventDefault();
+  const button = byId("section-one-run");
+  button.disabled = true;
+  const form = byId("section-one-form");
+  const body = {};
+  for (const field of form.elements) {
+    if (!field.name) continue;
+    body[field.name] = field.type === "checkbox" ? field.checked : field.value;
+  }
+  try {
+    const result = await api("/api/section-one/assess", "POST", body);
+    showSectionOneResult(result);
+  } catch (error) {
+    byId("section-one-output").textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness")]);
+    const [status, log, register, sectionOne] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
+    sectionOneCatalog = sectionOne;
+    renderDefinitions();
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -244,6 +334,8 @@ async function logout() {
 byId("incident-discovered").value = localDateInput(Date.now());
 byId("local-date").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 byId("refresh").addEventListener("click", refresh);
+byId("definition-query").addEventListener("input", renderDefinitions);
+byId("section-one-form").addEventListener("submit", runSectionOneAssessment);
 byId("incident-calculate").addEventListener("click", calculateIncident);
 byId("logout").addEventListener("click", logout);
 byId("accept-use").addEventListener("change", () => {

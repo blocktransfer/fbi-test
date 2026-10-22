@@ -15,6 +15,7 @@
         <a class="selected" href="#overview">◫ &nbsp; Overview</a>
         <a href="#testing">⌁ &nbsp; Test console</a>
         <a href="#controls">⬡ &nbsp; Readiness &amp; controls</a>
+        <a href="#section-one">§ &nbsp; Section 1 definitions</a>
         <a href="#activity">◷ &nbsp; Activity log</a>
       </nav>
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
@@ -110,6 +111,57 @@
             <div class="config"><div class="config-title"><strong>Gateway configuration</strong><span id="config-dot" class="dot grey"></span></div><p>Set these server environment variables; never upload certificates in the browser.</p><code>FBI_TEST_ENDPOINT</code><code>FBI_TEST_APPROVED_HOST</code><code>FBI_TEST_CA_BUNDLE</code><code>FBI_TEST_CLIENT_CERT</code><code>FBI_TEST_CLIENT_KEY</code><code>FBI_TEST_AUTHORIZATION_REF</code><code>FBI_TEST_ENABLE_GATEWAY</code><div class="config-status" id="gateway-host">No gateway configured.</div></div>
           </section>
         </div>
+
+
+        <section class="panel section-one" id="section-one" aria-labelledby="section-one-title">
+          <div class="panel-head"><div><div class="eyebrow">COMPACT COUNCIL / OUTSOURCING STANDARD · 2023-11-29</div><h2 id="section-one-title">Section 1 · Definitions</h2><p>All 25 definitions, PDF pages 3–7, and a nonidentifying role/data worksheet. No approvals or applicant records are created.</p></div><span class="counter" id="definition-count">25 terms</span></div>
+          <div class="definition-grid">
+            <div class="definition-browser">
+              <label class="input-label" for="definition-query">Search definitions by section or term</label>
+              <input type="search" id="definition-query" placeholder="e.g. CHRI, ARPOC, 1.22" autocomplete="off">
+              <div id="definition-list" class="definition-list" aria-live="polite"><p class="hint">Unlock your session to load policy definitions.</p></div>
+            </div>
+            <div class="scenario">
+              <h3>Role &amp; information assessment</h3>
+              <p class="subtle">Only synthetic yes/no claims and categories. Statements are not proof of an FBI-approved role, successful biometric match or lawful purpose. Nothing is retained.</p>
+              <form id="section-one-form" autocomplete="off">
+                <div class="scenario-fields">
+                  <label>Role
+                    <select name="role"><option value="channeler">Channeler</option><option value="authorized_recipient">Authorized Recipient</option></select>
+                  </label>
+                  <label>Recipient kind
+                    <select name="recipient_kind"><option value="unspecified">Not established</option><option value="government">Government</option><option value="nongovernmental">Nongovernmental</option></select>
+                  </label>
+                  <label>Noncriminal justice purpose
+                    <select name="purpose"><option value="unspecified">Unspecified</option><option value="employment_suitability">Employment suitability</option><option value="licensing">Licensing</option><option value="immigration_naturalization">Immigration / naturalization</option><option value="national_security_clearance">National security clearance</option><option value="other_legal_noncriminal">Other legally authorized</option></select>
+                  </label>
+                  <label>Reported recipient authority
+                    <select name="authority_basis"><option value="unverified">Not documented</option><option value="federal_statute">Federal statute</option><option value="federal_executive_order">Federal executive order</option><option value="state_statute_attorney_general_approved">State statute with AG approval</option></select>
+                  </label>
+                  <label>Identification method
+                    <select name="identification_method"><option value="none">None</option><option value="name_only">Name-only</option><option value="ten_rolled">Ten-rolled fingerprints</option><option value="ten_flat">Ten-flat fingerprints</option><option value="other_biometric">Other biometric</option></select>
+                  </label>
+                </div>
+                <div class="scenario-checks">
+                  <h4>Role boundaries · declarations only</h4>
+                  <label><input type="checkbox" name="agreement_reported"> Outsourcing agreement reported (§1.17)</label>
+                  <label><input type="checkbox" name="fbi_channeler_selection_reported"> FBI selection of Channeler reported (§1.05)</label>
+                  <label><input type="checkbox" name="direct_ngi_approval_reported"> Direct NGI connection approval reported (§1.05)</label>
+                  <label><input type="checkbox" name="same_entity_for_purpose"> Channeler and Recipient are same entity for this purpose (conflict)</label>
+                  <label><input type="checkbox" name="arpoc_recipient_employee"> ARPOC is Recipient employee (§1.03)</label>
+                  <label><input type="checkbox" name="chief_admin_role_applies"> Non-Compact-State Chief Administrator role applies (§1.07)</label>
+                  <label><input type="checkbox" name="chief_admin_repository_employee"> Chief Administrator/designee is repository employee</label>
+                  <h4>Data categories · flags only, no records</h4>
+                  <label><input type="checkbox" name="has_criminal_history"> Criminal charges/dispositions indicated (§1.08)</label>
+                  <label><input type="checkbox" name="has_biometric_identifiers"> Biometric identifiers indicated (§1.19)</label>
+                  <label><input type="checkbox" name="has_other_personal_identifiers"> Other linkable PII indicated (§1.19)</label>
+                </div>
+                <button class="button secondary" type="submit" id="section-one-run">Check definitions against scenario</button>
+              </form>
+              <div id="section-one-output" class="scenario-result" role="status" aria-live="polite">No scenario assessed. Real FBI, III, CHRI and Rap Back operations remain disabled.</div>
+            </div>
+          </div>
+        </section>
 
         <section class="panel activity" id="activity">
           <div class="panel-head"><div><div class="eyebrow">SESSION HISTORY</div><h2>Recent test activity</h2><p>Metadata-only events held in memory until the server exits.</p></div><span class="counter" id="activity-count">0 events</span></div>
