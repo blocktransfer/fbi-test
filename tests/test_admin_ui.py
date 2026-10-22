@@ -77,6 +77,22 @@ class AdminHttpTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/api/status")[0], 401)
         self.assertEqual(self.request("POST", "/api/session", {"acknowledge": True})[0], 401)
 
+    def test_security_readiness_catalog_is_never_certified(self):
+        status, data, _ = self.request("GET", "/api/readiness")
+        self.assertEqual(status, 200)
+        self.assertFalse(data["production_ready"])
+        self.assertFalse(data["FBI_approval_verified"])
+        self.assertGreaterEqual(data["control_count"], 20)
+        self.assertTrue(all(not row["is_fully_verified"] for row in data["controls"]))
+        self.assertIn("AC-8", [row["section"] for row in data["controls"]])
+        self.assertIn("3.12", [row["section"] for row in data["controls"]])
+        self.assertIn("2.08", [row["section"] for row in data["controls"]])
+
+    def test_readiness_requires_auth_and_system_notice(self):
+        self.assertEqual(self.request("GET", "/api/readiness", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/readiness")[0], 403)
+
     def test_authentication_on_status(self):
         self.assertEqual(self.request("GET", "/api/status", token=False)[0], 401)
         self.assertEqual(self.request("GET", "/api/status")[0], 200)

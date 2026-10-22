@@ -101,13 +101,33 @@ function showActivity(events) {
     body.append(row);
   }
 }
+function showReadiness(register) {
+  const root = byId("policy-controls");
+  root.replaceChildren();
+  byId("register-summary").textContent = String(register.control_count) + " mapped requirements · no production approval verified";
+  for (const control of register.controls) {
+    const item = document.createElement("details");
+    item.className = "register-item";
+    const summary = document.createElement("summary");
+    summary.textContent = control.framework + " " + control.section + " · " + control.responsible_party;
+    const text = document.createElement("p");
+    text.textContent = control.requirement;
+    const citation = document.createElement("small");
+    citation.textContent = "Source page(s): " + control.pages + " · " +
+      (control.state === "prototype_only" ? "Prototype control only — not verified" : "Unverified / external requirement");
+    item.append(summary, text, citation);
+    root.append(item);
+  }
+}
+
 async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log] = await Promise.all([api("/api/status"), api("/api/activity")]);
+    const [status, log, register] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness")]);
     showStatus(status);
     showActivity(log.events);
+    showReadiness(register);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;

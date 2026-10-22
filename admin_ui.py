@@ -21,6 +21,8 @@ import time
 from urllib.parse import urlsplit
 from uuid import uuid4
 
+from security_controls import readiness_register
+
 from fbi_sender import (
     AUTHORIZATION_PATTERN, ApprovedTestGateway, DeliveryUncertain, SenderError,
     TEST_MAGIC, TestReceipt,
@@ -265,6 +267,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/status":
                 self._json(200, self.server.state.status())
+            elif path == "/api/readiness":
+                self._json(200, readiness_register())
             elif path == "/api/activity":
                 with self.server.state.lock:
                     events = list(self.server.state.events)
