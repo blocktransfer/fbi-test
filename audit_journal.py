@@ -30,6 +30,7 @@ EVENTS = frozenset({
     "channeler_check_requested", "channeler_check_saved", "channeler_planned",
     "fbi_oversight_check_requested", "fbi_oversight_check_saved",
     "fbi_oversight_planned",
+    "misc_check_requested", "misc_check_saved", "misc_planned",
 })
 OUTCOMES = frozenset({
     "denied", "locked", "expired", "acknowledged", "terminated",

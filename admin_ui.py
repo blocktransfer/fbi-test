@@ -38,6 +38,12 @@ from fbi_oversight_checklist import OversightChecklist
 from fbi_oversight_schedule import deadlines as oversight_deadlines, OversightInputError
 from fbi_oversight_templates import template_catalog as oversight_templates
 from fbi_oversight_sampling import estimate as oversight_sample_estimate, SamplingInputError
+from misc_provisions import catalog as misc_catalog
+from misc_checklist import MiscChecklist
+from misc_guardrails import (
+    MiscInputError, scope_check, changes_check, government_power_check,
+    postage_instructions,
+)
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -97,6 +103,12 @@ class AdminState:
             self.env.get(
                 "FBI_TEST_OVERSIGHT_PATH",
                 str(default_audit.with_name("fbi-oversight-checklist.json")),
+            )
+        )
+        self.misc = MiscChecklist(
+            self.env.get(
+                "FBI_TEST_MISC_PATH",
+                str(default_audit.with_name("misc-checklist.json")),
             )
         )
         self.token = secrets.token_urlsafe(32) if token is None else token
@@ -340,6 +352,13 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/misc":
+                try:
+                    progress = self.server.state.misc.summary()
+                except ChecklistError:
+                    self._error(503, "Section 5 checklist unavailable")
+                    return
+                self._json(200, {"catalog": misc_catalog(), "progress": progress})
             elif path == "/api/fbi-oversight/templates":
                 self._json(200, oversight_templates())
             elif path == "/api/fbi-oversight":
@@ -401,7 +420,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference", "/api/fbi-oversight/check", "/api/fbi-oversight/deadlines", "/api/fbi-oversight/sample"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference", "/api/fbi-oversight/check", "/api/fbi-oversight/deadlines", "/api/fbi-oversight/sample", "/api/misc/check", "/api/misc/scope", "/api/misc/changes", "/api/misc/authority", "/api/misc/mail"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -429,6 +448,23 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._error(403, "Restricted system-use notice must be acknowledged")
             elif path == "/api/incident-deadlines":
                 self._json(200, incident_deadlines(request))
+            elif path == "/api/misc/check":
+                self._json(200, self.server.state.misc.update(
+                    request, self.server.state.audit
+                ))
+            elif path in (
+                "/api/misc/scope", "/api/misc/changes",
+                "/api/misc/authority", "/api/misc/mail",
+            ):
+                planner = {
+                    "/api/misc/scope": scope_check,
+                    "/api/misc/changes": changes_check,
+                    "/api/misc/authority": government_power_check,
+                    "/api/misc/mail": postage_instructions,
+                }[path]
+                result = planner(request)
+                self.server.state.audit.append("misc_planned", "validated")
+                self._json(200, result)
             elif path == "/api/fbi-oversight/check":
                 self._json(200, self.server.state.oversight.update(
                     request, self.server.state.audit
@@ -495,7 +531,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(503 if "Checklist" in str(exc) or "persist" in str(exc)
                         or "parse" in str(exc) or "securely" in str(exc) else 400,
                         "Recipient checklist unavailable" if "Checklist" in str(exc) else str(exc))
-        except (DeadlineError, ContextError, RecipientError, ChannelerInputError, OversightInputError, SamplingInputError) as exc:
+        except (DeadlineError, ContextError, RecipientError, ChannelerInputError, OversightInputError, SamplingInputError, MiscInputError) as exc:
             self._error(400, str(exc))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")

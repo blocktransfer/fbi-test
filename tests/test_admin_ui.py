@@ -24,11 +24,13 @@ class AdminHttpTests(unittest.TestCase):
         self.recipient_path = str(Path(self.audit_directory.name) / "recipient.json")
         self.channeler_path = str(Path(self.audit_directory.name) / "channeler.json")
         self.oversight_path = str(Path(self.audit_directory.name) / "oversight.json")
+        self.misc_path = str(Path(self.audit_directory.name) / "misc.json")
         self.state = AdminState(
             env={"FBI_TEST_AUDIT_PATH": self.audit_path,
                  "FBI_TEST_RECIPIENT_PATH": self.recipient_path,
                  "FBI_TEST_CHANNELER_PATH": self.channeler_path,
-                 "FBI_TEST_OVERSIGHT_PATH": self.oversight_path},
+                 "FBI_TEST_OVERSIGHT_PATH": self.oversight_path,
+                 "FBI_TEST_MISC_PATH": self.misc_path},
             token="test-" + "x" * 40
         )
         self.server = AdminServer(port=0, state=self.state)
@@ -280,6 +282,61 @@ class AdminHttpTests(unittest.TestCase):
             **request, "agency_name": "Not allowed"
         })[0], 400)
         self.assertEqual(self.request("POST", "/api/fbi-oversight/sample", request, token=False)[0], 401)
+
+    def test_section_five_catalog_is_protected_and_no_authority_granted(self):
+        status, data, _ = self.request("GET", "/api/misc")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["catalog"]["sections"], [f"5.{n:02d}" for n in range(1,9)])
+        self.assertEqual(data["catalog"]["check_count"], 17)
+        self.assertFalse(data["catalog"]["regulatory_change_authorized"])
+        self.assertFalse(data["progress"]["FBI_approval_verified"])
+        self.assertEqual(self.request("GET", "/api/misc", token=False)[0], 401)
+        self.state.notice_acknowledged = False
+        self.assertEqual(self.request("GET", "/api/misc")[0], 403)
+
+    def test_section_five_private_checklist_does_not_modify_standards(self):
+        payload = {"id": "5.05.no_local_waivers", "reported": True,
+                   "evidence_ref": "POLICY-2026-001"}
+        status, result, _ = self.request("POST", "/api/misc/check", payload)
+        self.assertEqual(status, 200)
+        self.assertFalse(result["independently_verified"])
+        self.assertEqual(self.request("GET", "/api/misc")[1]["progress"]["reported_count"], 1)
+        self.assertEqual(Path(self.misc_path).stat().st_mode & 0o777, 0o600)
+        self.assertFalse(Path(self.recipient_path).exists())
+        self.assertFalse(Path(self.channeler_path).exists())
+        self.assertFalse(Path(self.oversight_path).exists())
+        self.assertEqual(self.request("POST", "/api/misc/check", {
+            "id": "5.05.no_local_waivers", "reported": False,
+            "evidence_ref": None,
+        })[0], 200)
+
+    def test_section_five_governance_and_postal_apis_are_dry_runs(self):
+        request = {
+            "instrument": "outsourcing_standard", "direction": "weaker",
+            "actor": "compact_council",
+            "compact_council_consent_reported": True,
+            "us_ag_consultation_reported": True,
+        }
+        status, result, _ = self.request("POST", "/api/misc/changes", request)
+        self.assertEqual(status, 200)
+        self.assertEqual(result["status"], "blocked_pending_external_authority")
+        self.assertFalse(result["minimum_control_bypassed"])
+        self.assertEqual(self.request("POST", "/api/misc/changes", {
+            **request, "person_name": "private",
+        })[0], 400)
+        for endpoint, body in (
+            ("/api/misc/scope", {"party":"other","asset":"systems",
+                                 "supports_authorized_recipient":True,"rights_claimed":True}),
+            ("/api/misc/authority", {"kind":"audit","actor":"us_attorney_general",
+                                     "action":"post_termination_final"}),
+            ("/api/misc/mail", {"addressee":"compact_council",
+                                "mail_method":"first_class_mail","purpose":"notice"}),
+        ):
+            status, result, _ = self.request("POST", endpoint, body)
+            self.assertEqual(status, 200)
+            self.assertFalse(result.get("new_rights_granted", result.get("authority_exercised", result.get("mail_dispatched", True))))
+        self.assertFalse(Path(self.misc_path).exists())
+        self.assertIn("misc_planned", Path(self.audit_path).read_text())
 
     def test_section_four_oversight_catalog_and_authentication(self):
         code, result, _ = self.request("GET", "/api/fbi-oversight")
