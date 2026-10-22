@@ -1,6 +1,8 @@
 """Offline HTTP integration tests for the loopback synthetic admin console."""
 
 from http.client import HTTPConnection
+from pathlib import Path
+import tempfile
 import json
 import threading
 import unittest
@@ -8,13 +10,20 @@ from unittest.mock import patch
 import time
 from uuid import uuid4
 
+from audit_journal import AuditError, AuditJournal
 from admin_ui import AdminServer, AdminState, synthetic_bytes
 from fbi_sender import DeliveryUncertain, TEST_MAGIC
 
 
 class AdminHttpTests(unittest.TestCase):
     def setUp(self):
-        self.state = AdminState(env={}, token="test-" + "x" * 40)
+        self.audit_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.audit_directory.cleanup)
+        self.audit_path = str(Path(self.audit_directory.name) / "audit.jsonl")
+        Path(self.audit_directory.name).chmod(0o700)
+        self.state = AdminState(
+            env={"FBI_TEST_AUDIT_PATH": self.audit_path}, token="test-" + "x" * 40
+        )
         self.server = AdminServer(port=0, state=self.state)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -26,6 +35,7 @@ class AdminHttpTests(unittest.TestCase):
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=3)
+        self.state.audit.close()
 
     def request(self, method, path, data=None, *, token=True, origin=True, host=None, content_type=True):
         connection = HTTPConnection("127.0.0.1", self.server.server_port, timeout=4)
@@ -47,6 +57,32 @@ class AdminHttpTests(unittest.TestCase):
             return response.status, json.loads(payload), dict(response.getheaders())
         except ValueError:
             return response.status, payload, dict(response.getheaders())
+
+    def test_audit_journal_persists_sanitized_events(self):
+        self.assertEqual(self.request("POST", "/api/preview", {"padding": 0})[0], 200)
+        audit_text = Path(self.audit_path).read_text()
+        self.assertIn('"event":"session_acknowledged"', audit_text)
+        self.assertIn('"event":"synthetic_preview"', audit_text)
+        self.assertNotIn("agency-test-123", audit_text)
+        self.assertNotIn("SYNTHETIC-NON-CJI", audit_text)
+        self.assertEqual(Path(self.audit_path).stat().st_mode & 0o777, 0o600)
+        # Restart verification of the journal's hash chain should succeed.
+        second_reader = AuditJournal(self.audit_path)
+        second_reader.close()
+
+    def test_tampered_audit_journal_cannot_be_opened(self):
+        self.state.audit.close()
+        with open(self.audit_path, "ab") as handle:
+            handle.write(b"corruption\n")
+        with self.assertRaises(AuditError):
+            AuditJournal(self.audit_path)
+
+    def test_audit_changes_block_test_gateway_submission(self):
+        self.set_ready()
+        Path(self.audit_path).write_bytes(b"tampered")
+        request = self.send_request()
+        self.assertEqual(self.request("POST", "/api/send", request)[0], 503)
+        self.assertEqual(self.state.status()["attempts"], 0)
 
     def test_loopback_only(self):
         self.assertEqual(self.server.server_address[0], "127.0.0.1")

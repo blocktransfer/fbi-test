@@ -21,6 +21,7 @@ import time
 from urllib.parse import urlsplit
 from uuid import uuid4
 
+from audit_journal import AuditError, AuditJournal
 from security_controls import readiness_register
 
 from fbi_sender import (
@@ -60,6 +61,8 @@ def synthetic_bytes(padding: int) -> bytes:
 class AdminState:
     def __init__(self, env: dict[str, str] | None = None, token: str | None = None):
         self.env = dict(os.environ if env is None else env)
+        default_audit = Path.home() / ".blocktransfer-fbi-test" / "audit.jsonl"
+        self.audit = AuditJournal(self.env.get("FBI_TEST_AUDIT_PATH", str(default_audit)))
         self.token = secrets.token_urlsafe(32) if token is None else token
         self.events: deque[dict] = deque(maxlen=25)
         self.seen_requests: set[str] = set()
@@ -84,6 +87,7 @@ class AdminState:
                 return False
             if (now - self.session_started >= MAX_SESSION_SECONDS
                     or now - self.last_authenticated >= IDLE_TIMEOUT_SECONDS):
+                self.audit.append("session_expired", "expired")
                 self.session_expired = True
                 return False
             if candidate and secrets.compare_digest(candidate, self.token):
@@ -92,17 +96,21 @@ class AdminState:
                 return True
             while self.failed_logons and now - self.failed_logons[0] >= FAILURE_WINDOW_SECONDS:
                 self.failed_logons.popleft()
+            self.audit.append("auth_failure", "denied")
             self.failed_logons.append(now)
             if len(self.failed_logons) >= MAX_FAILED_LOGONS:
+                self.audit.append("auth_lockout", "locked")
                 self.session_locked = True
             return False
 
     def acknowledge_use(self) -> None:
         with self.lock:
+            self.audit.append("session_acknowledged", "acknowledged")
             self.notice_acknowledged = True
 
     def terminate_session(self) -> None:
         with self.lock:
+            self.audit.append("logout", "terminated")
             self.session_expired = True
             self.notice_acknowledged = False
 
@@ -128,6 +136,9 @@ class AdminState:
             "session_idle_timeout_seconds": IDLE_TIMEOUT_SECONDS,
             "session_absolute_timeout_seconds": MAX_SESSION_SECONDS,
             "mfa_configured": False,
+            "audit_journal_local": True,
+            "audit_integrity_external_anchor": False,
+            "audit_records_retention_verified": False,
         }
 
     def gateway(self) -> ApprovedTestGateway:
@@ -160,10 +171,11 @@ class AdminState:
                 raise SenderError("Request already used; no automatic resubmission")
             if self.sending:
                 raise SenderError("Another test is in progress")
+            submission_id = str(uuid4())
+            # The durable attempt record is mandatory before any network action.
+            self.audit.append("gateway_started", "started", submission_id=submission_id)
             self.sending = True
-            # Claim ID before any transport work, even if delivery is uncertain.
             self.seen_requests.add(request_id)
-        submission_id = str(uuid4())
         event = {
             "event": "synthetic_gateway_submission",
             "submission_id": submission_id,
@@ -193,6 +205,13 @@ class AdminState:
             with self.lock:
                 self.events.appendleft(event)
                 self.sending = False
+            try:
+                self.audit.append(
+                    "gateway_completed", event["outcome"],
+                    submission_id=submission_id, http_status=event["http_status"],
+                )
+            except AuditError as exc:
+                raise DeliveryUncertain("Audit persistence failed; do not retry") from exc
 
 
 class AdminServer(ThreadingHTTPServer):
@@ -260,7 +279,12 @@ class AdminHandler(BaseHTTPRequestHandler):
             return
         path = self._path()
         if path.startswith("/api/"):
-            if not self._authorized():
+            try:
+                authenticated = self._authorized()
+            except AuditError:
+                self._error(503, "Security audit unavailable; operation blocked")
+                return
+            if not authenticated:
                 self._error(401, "Session unavailable; restart the local server to unlock")
                 return
             if not self.server.state.use_authorized():
@@ -291,7 +315,12 @@ class AdminHandler(BaseHTTPRequestHandler):
         if not self._valid_host() or self.headers.get("Origin") != self.server.origin:
             self._error(403, "Origin not allowed")
             return
-        if not self._authorized():
+        try:
+            authenticated = self._authorized()
+        except AuditError:
+            self._error(503, "Security audit unavailable; operation blocked")
+            return
+        if not authenticated:
             self._error(401, "Session unavailable; restart the local server to unlock")
             return
         if self.headers.get("Content-Type") != "application/json":
@@ -328,6 +357,7 @@ class AdminHandler(BaseHTTPRequestHandler):
                 if set(request) != {"padding"}:
                     raise SenderError("Unexpected preview fields")
                 data = synthetic_bytes(request["padding"])
+                self.server.state.audit.append("synthetic_preview", "validated")
                 self._json(200, {
                     "kind": "deterministic_synthetic_non_cji",
                     "bytes": len(data), "padding": request["padding"],
@@ -338,6 +368,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, receipt)
         except DeliveryUncertain:
             self._error(502, "Delivery unknown; do not retry without agency reconciliation")
+        except AuditError:
+            self._error(503, "Security audit unavailable; operation blocked; do not retry")
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._error(400, "Invalid JSON document")
         except SenderError as exc:
