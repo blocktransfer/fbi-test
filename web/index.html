@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">
+  <title>Sender Console — BlockTransfer</title>
+  <link rel="stylesheet" href="/app.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="identity" href="#overview"><span class="mark">B<span>·</span></span><span><strong>BlockTransfer</strong><small>Sender administration</small></span></a>
+      <p class="side-label">WORKSPACE</p>
+      <nav aria-label="Main navigation">
+        <a class="selected" href="#overview">◫ &nbsp; Overview</a>
+        <a href="#testing">⌁ &nbsp; Test console</a>
+        <a href="#controls">⬡ &nbsp; Readiness &amp; controls</a>
+        <a href="#activity">◷ &nbsp; Activity log</a>
+      </nav>
+      <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong>Sender console</strong></div><div class="top-actions"><span class="environment"><span class="dot"></span> Test environment</span><button id="refresh" class="refresh" type="button">↻ &nbsp; Refresh</button><span class="avatar">BT</span></div></header>
+      <main>
+        <section id="overview">
+          <div class="heading"><div><div class="eyebrow">OPERATIONS / OVERVIEW</div><h1>Fingerprint sender <em>console</em></h1><p>Monitor the local integration workspace, prepare synthetic tests, and track security readiness.</p></div><small id="local-date" class="date">LOCAL ADMIN</small></div>
+          <div id="auth-notice" class="auth-notice" hidden role="alert"><strong>Admin session locked</strong><p id="auth-message">Open the one-time dashboard URL printed by python admin_ui.py in your terminal.</p></div>
+          <div class="hero"><div class="hero-copy"><span class="hero-eyebrow"><span class="dot"></span> RESTRICTED TEST WORKSPACE</span><h2>A secure starting point<br>for every submission.</h2><p>Only deterministic, non-biometric test bytes are permitted. Production fingerprint exchange and FBI connectivity are intentionally unavailable.</p><a href="#testing">Open test console ↗</a></div><div class="hero-art" aria-hidden="true">BT</div></div>
+          <div class="metrics">
+            <article><div class="metric-label">Environment <span class="metric-icon lavender">◈</span></div><strong>Sandbox</strong><small>● Synthetic mode enforced</small></article>
+            <article><div class="metric-label">Test gateway <span class="metric-icon blue">⇄</span></div><strong id="gateway-metric">Checking…</strong><small id="gateway-caption">Loading configuration</small></article>
+            <article><div class="metric-label">Attempts this session <span class="metric-icon orange">◷</span></div><strong id="attempts-metric">—</strong><small>Volatile, local history</small></article>
+            <article><div class="metric-label">HTTP 2xx receipts <span class="metric-icon mint">✓</span></div><strong id="receipts-metric">—</strong><small>Not FBI acceptance</small></article>
+          </div>
+        </section>
+
+        <div class="columns">
+          <section class="panel" id="testing">
+            <div class="panel-head"><div><div class="eyebrow">TEST ENVIRONMENT</div><h2>Synthetic test console</h2><p>Generate a safe, deterministic sample with no biometric input.</p></div><span class="panel-symbol">⌁</span></div>
+            <div class="panel-body">
+              <div class="field-heading"><label for="padding">Sample size</label><small>Fixed test bytes + zero padding</small></div>
+              <select id="padding"><option value="0">Minimal · no padding</option><option value="256">Small · 256 bytes</option><option value="1024" selected>Standard · 1 KB</option><option value="4096">Extended · 4 KB</option></select>
+              <p class="hint">No raw fingerprints, files, or PII can be attached.</p>
+              <div class="sample"><span class="sample-symbol">▤</span><div><strong>Deterministic test payload</strong><small>Fixed marker · 2 test bytes · zero padding</small></div><span class="sample-tag">NON-CJI</span></div>
+              <button class="button secondary" type="button" id="preview">↗ &nbsp; Validate sample locally</button>
+              <p class="feedback" id="preview-feedback" role="status" aria-live="polite">No local validation run yet.</p>
+              <hr>
+              <div class="send-heading"><h3>Authorized gateway test</h3><span class="pill" id="gateway-pill">CHECKING</span></div>
+              <p class="subtle">Requires an agency-approved HTTPS test gateway and certificates configured locally on the server.</p>
+              <label class="input-label" for="authorization">Test authorization reference</label>
+              <input type="text" id="authorization" maxlength="64" autocomplete="off" spellcheck="false" placeholder="e.g. agency-test-123">
+              <label class="check"><input type="checkbox" id="confirmed"><span>I confirm this is <strong>synthetic data only</strong> and I have authorization to test this gateway.</span></label>
+              <button class="button primary" type="button" id="send" disabled>Send synthetic gateway test ↗</button>
+              <p class="feedback center" id="send-feedback" role="status" aria-live="polite">Gateway test transmission is unavailable until configured.</p>
+            </div>
+          </section>
+          <section class="panel" id="controls">
+            <div class="panel-head"><div><div class="eyebrow">SECURITY POSTURE</div><h2>Readiness &amp; controls</h2><p>A transparent view of what is — and isn't — in place.</p></div><span class="panel-symbol">⬡</span></div>
+            <div class="warning"><span class="warning-icon">◇</span><div><strong>Production restricted</strong><p>Approval, EBTS validation, and operational controls remain outstanding.</p></div><small>NOT READY</small></div>
+            <div class="checks">
+              <div class="control"><span class="check-icon ok">✓</span><div><strong>Local admin boundary</strong><small>Loopback, per-launch token, origin checks</small></div><b>In code</b></div>
+              <div class="control"><span class="check-icon ok">✓</span><div><strong>Safe synthetic inputs</strong><small>Deterministic bytes; no biometric uploads</small></div><b>In code</b></div>
+              <div class="control"><span class="check-icon">·</span><div><strong>Agency exchange agreement</strong><small>CJIS §5.1.1 / CA-3</small></div><b>External</b></div>
+              <div class="control"><span class="check-icon">·</span><div><strong>Approved transport &amp; cryptography</strong><small>SC-8, SC-12, SC-13 · FIPS unverified</small></div><b>Pending</b></div>
+              <div class="control"><span class="check-icon">·</span><div><strong>EBTS transaction validation</strong><small>Records, acknowledgments, certification</small></div><b>Pending</b></div>
+              <div class="control"><span class="check-icon">·</span><div><strong>Durable auditing &amp; retention</strong><small>AU-2, AU-9, AU-11 / SC-28</small></div><b>Pending</b></div>
+            </div>
+            <div class="config"><div class="config-title"><strong>Gateway configuration</strong><span id="config-dot" class="dot grey"></span></div><p>Set these server environment variables; never upload certificates in the browser.</p><code>FBI_TEST_ENDPOINT</code><code>FBI_TEST_APPROVED_HOST</code><code>FBI_TEST_CA_BUNDLE</code><code>FBI_TEST_CLIENT_CERT</code><code>FBI_TEST_CLIENT_KEY</code><div class="config-status" id="gateway-host">No gateway configured.</div></div>
+          </section>
+        </div>
+
+        <section class="panel activity" id="activity">
+          <div class="panel-head"><div><div class="eyebrow">SESSION HISTORY</div><h2>Recent test activity</h2><p>Metadata-only events held in memory until the server exits.</p></div><span class="counter" id="activity-count">0 events</span></div>
+          <div class="table-wrap"><table><thead><tr><th>TIME (UTC)</th><th>SUBMISSION ID</th><th>EVENT</th><th>RESULT</th></tr></thead><tbody id="activity-body"><tr><td colspan="4" class="empty"><span>◷</span><strong>No submissions yet</strong><small>Test gateway events will appear here.</small></td></tr></tbody></table></div>
+        </section>
+        <footer><span>BlockTransfer / Sender administration</span><span>Local-only · No FBI NGI connectivity · No CJI processing</span></footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
