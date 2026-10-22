@@ -204,6 +204,63 @@ Available APIs: `GET /api/fbi-oversight`,
 See [`docs/section-4-implementation.md`](docs/section-4-implementation.md)
 for the clause-by-clause implementation and explicit external duties.
 
+## Section 5 miscellaneous provisions — governance controls
+
+Section 5 (``5.01–5.08; **PDF pp. 18–19 / printed pp. 10–11**) of
+the Compact Council's November 29, 2023 Channeling Outsourcing Standard
+sets **minimums, government authority and legal correspondence rules**.
+The new **Section 5 miscellaneous** dashboard provides source-linked
+tracking and dry-run validations but grants no agency rights.
+
+- **`5.01:** Scope check for every Recipient-supporting category:
+  personnel, systems, networks and facilities. Only Compact Council may
+  amend the Standard under 28 CFR Part 906.
+- **`5.02:** Blocks interpreting the Standard as conferring rights on
+  persons outside Channeler, Authorized Recipient, FBI or the applicable
+  Compact Officer/Chief Administrator.
+- **`5.03:** Explicit incorporation by reference of the CJIS
+  Security Policy into the Standard.
+- **`5.04:** Tracks agreement terms exceeding baseline security,
+  including possible additional audits, fees and site requirements.
+- **`5.05:** Rejects internal weakening of mandatory controls. Compact
+  Council authority, CJIS APB procedures and Attorney General
+  consultation remain external; self-reported consent does not bypass
+  any mandatory minimum or make a waiver effective.
+- **`5.06:** Distinguishes scheduled/unscheduled audits by Compact
+  Officer/Chief Administrator, Compact Council and U.S. Attorney
+  General from **post-termination final audits** reserved to Compact
+  Council, Attorney General and the applicable state.
+- **`5.07:** Displays competent authorities' discretion to investigate
+  **or decline to investigate** reports of unauthorized CHRI access;
+  the dashboard exercises neither option.
+- **`5.08:** Presents the Standard's First Class Mail routing for
+  required notices, assurances and correspondence:
+  **FBI Compact Officer, BTC4, FBI CJIS Division,
+  1000 Custer Hollow Road, Clarksburg, WV 26306**.
+  This address is reproduced from the 2023 source; its current status
+  must be verified before an actual mailing.
+
+The Section 5 screen also offers 17 nonidentifying documentary
+checkpoints, four dry-run assessments, and six blank, copy-only
+governance and mail templates. No live mail is sent; no identity,
+legal determination, CHRI, fingerprint or actual incident is stored.
+
+Checklist reference codes are stored separately from ``2–4 in an
+owner-only file at `~/.blocktransfer-fbi-test/misc-checklist.json`
+or the path set with `FBI_TEST_MISC_PATH`. All checklist entries are
+**operator-reported and never independently verified**; no external
+regulatory permissions or minimum-security relaxations result.
+
+Authenticated API: `GET /api/misc`,
+`POST /api/misc/check`, `POST /api/misc/scope`,
+`POST /api/misc/changes`, `POST /api/misc/authority`,
+`POST /api/misc/mail` and `GET /api/misc/templates`.
+Each requires the existing local token and system-use acknowledgment.
+
+The [Section 5 implementation matrix](docs/section-5-implementation.md)
+documents which software capabilities exist and which decisions/actions
+require authorized government or legal personnel.
+
 ## Local admin frontend
 
 Start the **local-only** administrative dashboard from the repository root:
