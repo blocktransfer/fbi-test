@@ -265,10 +265,12 @@ class AdminHandler(BaseHTTPRequestHandler):
             else:
                 receipt = self.server.state.send(request)
                 self._json(200, receipt)
-        except (json.JSONDecodeError, SenderError) as exc:
-            self._error(409 if "already used" in str(exc) else 400, str(exc))
         except DeliveryUncertain:
             self._error(502, "Delivery unknown; do not retry without agency reconciliation")
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            self._error(400, "Invalid JSON document")
+        except SenderError as exc:
+            self._error(409 if "already used" in str(exc) else 400, str(exc))
 
 
 def main(argv: list[str] | None = None) -> None:

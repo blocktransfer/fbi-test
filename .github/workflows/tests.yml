@@ -16,5 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Check admin JavaScript syntax
+        run: node --check web/app.js
       - name: Run offline synthetic-only tests
         run: python -m unittest discover -s tests -v

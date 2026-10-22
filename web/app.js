@@ -139,9 +139,12 @@ async function sendTest() {
   } catch (error) {
     feedback("send-feedback", error.message + " Do not retry until prior delivery is reconciled.", "error");
   } finally {
+    const note = byId("send-feedback").textContent;
+    const outcome = byId("send-feedback").classList.contains("success") ? "success" : "error";
     byId("confirmed").checked = false;
     sending = false;
     await refresh();
+    feedback("send-feedback", note, outcome);
     sendButtonState();
   }
 }
