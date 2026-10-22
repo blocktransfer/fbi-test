@@ -217,6 +217,31 @@ class AdminHttpTests(unittest.TestCase):
         self.state.notice_acknowledged = False
         self.assertEqual(self.request("GET", "/api/channeler/templates")[0], 403)
 
+    def test_channeler_synthetic_dissemination_and_rapback_reference_apis(self):
+        doc = {
+            "recipient_oca_or_ori": "TEST-OCA-ABC123",
+            "transaction_control_number": "TEST-TCN-ABC123",
+            "disseminated_at": "2026-10-22T10:00:00Z",
+            "statutory_authority_test_ref": "TEST-AUTH-ABC123",
+            "means": "test_secure_electronic",
+            "as_of": "2026-10-22T10:00:00Z",
+        }
+        status, result, _ = self.request("POST", "/api/channeler/dissemination", doc)
+        self.assertEqual(status, 200)
+        self.assertFalse(result["log_record_saved"])
+        self.assertEqual(self.request("POST", "/api/channeler/dissemination", {
+            **doc, "person_name":"Private"
+        })[0], 400)
+        refs = {"transaction_control_number":"TEST-TCN-ABC123",
+                "subscription_identifier":"TEST-RBS-ABC123"}
+        status, result, _ = self.request("POST", "/api/channeler/rapback-reference", refs)
+        self.assertEqual(status, 200)
+        self.assertFalse(result["applicant_pii_accepted"])
+        self.assertEqual(self.request("POST", "/api/channeler/rapback-reference", {
+            **refs, "birth_date":"Private"
+        })[0], 400)
+        self.assertFalse(Path(self.channeler_path).exists())
+
     def test_section_three_catalog_is_separate_and_secured(self):
         status, data, _ = self.request("GET", "/api/channeler")
         self.assertEqual(status, 200)

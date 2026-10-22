@@ -32,6 +32,7 @@ from recipient_templates import template_catalog
 from channeler_policy import catalog as channeler_catalog
 from channeler_checklist import ChannelerChecklist
 from channeler_templates import template_catalog as channeler_templates
+from channeler_metadata import dissemination_dry_run, rapback_link_dry_run
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -380,7 +381,7 @@ class AdminHandler(BaseHTTPRequestHandler):
             self._error(415, "JSON content required")
             return
         path = self._path()
-        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback"):
+        if path not in ("/api/preview", "/api/send", "/api/session", "/api/logout", "/api/incident-deadlines", "/api/section-one/assess", "/api/recipient/check", "/api/recipient/deadlines", "/api/channeler/check", "/api/channeler/deadlines", "/api/channeler/retention", "/api/channeler/training", "/api/channeler/rapback", "/api/channeler/dissemination", "/api/channeler/rapback-reference"):
             self._error(404, "Unknown API route")
             return
         try:
@@ -415,12 +416,15 @@ class AdminHandler(BaseHTTPRequestHandler):
             elif path in (
                 "/api/channeler/deadlines", "/api/channeler/retention",
                 "/api/channeler/training", "/api/channeler/rapback",
+                "/api/channeler/dissemination", "/api/channeler/rapback-reference",
             ):
                 planner = {
                     "/api/channeler/deadlines": channeler_deadlines,
                     "/api/channeler/retention": retention_dry_run,
                     "/api/channeler/training": training_dry_run,
                     "/api/channeler/rapback": rapback_dry_run,
+                    "/api/channeler/dissemination": dissemination_dry_run,
+                    "/api/channeler/rapback-reference": rapback_link_dry_run,
                 }[path]
                 result = planner(request)
                 self.server.state.audit.append("channeler_planned", "validated")
