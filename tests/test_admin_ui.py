@@ -246,6 +246,25 @@ class AdminHttpTests(unittest.TestCase):
         })[0], 400)
         self.assertFalse(Path(self.channeler_path).exists())
 
+    def test_section_four_frontend_and_nonofficial_templates(self):
+        status, html, _ = self.request("GET", "/", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'id="fbi-oversight"', html)
+        self.assertIn(b'id="oversight-checks"', html)
+        self.assertIn(b'id="oversight-planner"', html)
+        self.assertIn(b'id="oversight-template-text"', html)
+        status, js, _ = self.request("GET", "/app.js", token=False)
+        self.assertEqual(status, 200)
+        self.assertIn(b'"/api/fbi-oversight/check"', js)
+        self.assertNotIn(b"innerHTML", js)
+        status, data, _ = self.request("GET", "/api/fbi-oversight/templates")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["templates"]), 9)
+        self.assertFalse(data["production_ready"])
+        self.assertTrue(all(not x["agency_action_performed"] for x in data["templates"]))
+        self.assertTrue(all(not x["FBI_approval_verified"] for x in data["templates"]))
+        self.assertEqual(self.request("GET", "/api/fbi-oversight/templates", token=False)[0], 401)
+
     def test_section_four_oversight_catalog_and_authentication(self):
         code, result, _ = self.request("GET", "/api/fbi-oversight")
         self.assertEqual(code, 200)

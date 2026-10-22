@@ -36,6 +36,7 @@ from channeler_metadata import dissemination_dry_run, rapback_link_dry_run
 from fbi_oversight import catalog as oversight_catalog
 from fbi_oversight_checklist import OversightChecklist
 from fbi_oversight_schedule import deadlines as oversight_deadlines, OversightInputError
+from fbi_oversight_templates import template_catalog as oversight_templates
 from channeler_operations import (
     ChannelerInputError, deadlines as channeler_deadlines,
     retention_dry_run, training_dry_run, rapback_dry_run,
@@ -338,6 +339,8 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self._json(200, readiness_register())
             elif path == "/api/section-one":
                 self._json(200, definition_catalog())
+            elif path == "/api/fbi-oversight/templates":
+                self._json(200, oversight_templates())
             elif path == "/api/fbi-oversight":
                 try:
                     progress = self.server.state.oversight.summary()

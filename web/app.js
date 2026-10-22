@@ -578,11 +578,163 @@ async function calculateRecipientDeadlines(event) {
   }
 }
 
+let oversightTemplates = [];
+
+function showOversight(payload) {
+  const {catalog, progress} = payload;
+  byId("oversight-count").textContent =
+    progress.reported_count + " / " + catalog.check_count + " reported · 0 independently verified";
+  const root = byId("oversight-checks");
+  const opened = new Set(Array.from(root.querySelectorAll("details[open]")).map(x => x.dataset.section));
+  root.replaceChildren();
+  for (const clause of catalog.clauses) {
+    const details = document.createElement("details");
+    details.className = "recipient-group";
+    details.dataset.section = clause.section;
+    details.open = opened.has(clause.section);
+    const heading = document.createElement("summary");
+    heading.textContent = "§" + clause.section + " · " + clause.responsible_party;
+    details.append(heading);
+    const summary = document.createElement("p");
+    summary.className = "channeler-clause-text";
+    summary.textContent = clause.description + " · Source printed p. " + clause.printed_page;
+    details.append(summary);
+    for (const check of catalog.checks.filter(x => x.section === clause.section)) {
+      const prior = progress.checks[check.id];
+      const line = document.createElement("div");
+      line.className = "recipient-check";
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = Boolean(prior?.reported);
+      label.append(checkbox, document.createTextNode(check.description));
+      const help = document.createElement("small");
+      help.textContent = "Actor: " + check.actor + " · reference is operator-reported, never official verification";
+      const entry = document.createElement("div");
+      entry.className = "recipient-entry";
+      const reference = document.createElement("input");
+      reference.type = "text";
+      reference.maxLength = 64;
+      reference.autocomplete = "off";
+      reference.spellcheck = false;
+      reference.placeholder = "Safe reference code, e.g. REVIEW-2026-001";
+      reference.setAttribute("aria-label", "Document reference " + check.id);
+      reference.value = prior?.evidence_ref || "";
+      const save = document.createElement("button");
+      save.type = "button";
+      save.className = "recipient-save";
+      save.textContent = "Record";
+      const note = document.createElement("p");
+      note.className = "recipient-note";
+      note.setAttribute("aria-live", "polite");
+      save.addEventListener("click", async () => {
+        save.disabled = true;
+        try {
+          await api("/api/fbi-oversight/check", "POST", {
+            id: check.id, reported: checkbox.checked,
+            evidence_ref: checkbox.checked ? reference.value.trim() : null
+          });
+          showOversight(await api("/api/fbi-oversight"));
+        } catch (error) {
+          note.textContent = error.message;
+          note.className = "recipient-note error";
+          save.disabled = false;
+        }
+      });
+      entry.append(reference, save);
+      line.append(label, help, entry, note);
+      details.append(line);
+    }
+    root.append(details);
+  }
+}
+
+async function calculateOversight(event) {
+  event.preventDefault();
+  const target = byId("oversight-output");
+  target.replaceChildren();
+  const occurred = byId("oversight-time").value;
+  if (!occurred) { target.textContent = "Choose the reference date."; return; }
+  const payload = {
+    event: byId("oversight-event").value,
+    occurred_at: new Date(occurred).toISOString(),
+    as_of: new Date().toISOString()
+  };
+  try {
+    const result = await api("/api/fbi-oversight/deadlines", "POST", payload);
+    const fields = result.event === "first_approved_chri_receipt" ? [
+      ["FBI initial audit certification AND results", result.fbi_initial_audit_and_certification_due_utc],
+      ["Combined first representative-sample audit", result.combined_state_federal_first_sample_audit_due_utc],
+      ["FBI one-year reference", result.fbi_one_year_audit_reference_utc],
+      ["FBI next triennial reference", result.fbi_next_triennial_audit_reference_utc],
+      ["Combined next triennial sample-audit reference", result.combined_state_federal_next_triennial_reference_utc],
+    ] : result.event === "policy_update_notification" ? [
+      ["FBI current documents due", result.policy_versions_available_by_utc],
+    ] : [
+      ["FBI personnel roster update due", result.access_roster_updated_by_utc],
+    ];
+    for (const [label, date] of fields) {
+      const p = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = label + ": ";
+      p.append(strong, document.createTextNode(new Date(date).toLocaleString()));
+      target.append(p);
+    }
+    const caution = document.createElement("p");
+    caution.textContent = result.scheduling_assumption || result.notes;
+    target.append(caution);
+    const notDone = document.createElement("p");
+    notDone.textContent = "FBI approvals verified: No. Audits/notifications performed: No.";
+    target.append(notDone);
+  } catch (error) {
+    target.textContent = error.message;
+  }
+}
+
+function showOversightTemplates(payload) {
+  oversightTemplates = payload.templates;
+  const select = byId("oversight-template");
+  const prior = select.value;
+  select.replaceChildren();
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "Select a document…";
+  select.append(empty);
+  for (const entry of oversightTemplates) {
+    const option = document.createElement("option");
+    option.value = entry.id;
+    option.textContent = entry.title + " · " + entry.sections.join(", ");
+    select.append(option);
+  }
+  select.value = oversightTemplates.some(x => x.id === prior) ? prior : "";
+  selectOversightTemplate();
+}
+function selectOversightTemplate() {
+  const entry = oversightTemplates.find(x => x.id === byId("oversight-template").value);
+  byId("oversight-template-text").value = entry ? entry.body : "";
+  byId("oversight-copy").disabled = !entry;
+  byId("oversight-template-note").textContent =
+    entry ? "Blank outline only. No official FBI/Compact Officer action has occurred." :
+            "No document has been sent or approved.";
+}
+async function copyOversightTemplate() {
+  const body = byId("oversight-template-text").value;
+  if (!body) return;
+  try {
+    await navigator.clipboard.writeText(body);
+    byId("oversight-template-note").textContent =
+      "Blank outline copied. Obtain authentic agency decisions through approved external channels.";
+  } catch (_) {
+    byId("oversight-template-note").textContent =
+      "Clipboard denied; manually select and copy the blank outline.";
+  }
+}
+
 async function refresh() {
   if (!token) return;
   byId("refresh").disabled = true;
   try {
-    const [status, log, register, sectionOne, recipient, templates, channeler, channelerForms] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler"), api("/api/channeler/templates")]);
+    const [status, log, register, sectionOne, recipient, templates, channeler, channelerForms, oversight, oversightForms] = await Promise.all([api("/api/status"), api("/api/activity"), api("/api/readiness"), api("/api/section-one"), api("/api/recipient"), api("/api/recipient/templates"), api("/api/channeler"), api("/api/channeler/templates"), api("/api/fbi-oversight"), api("/api/fbi-oversight/templates")]);
     showStatus(status);
     showActivity(log.events);
     showReadiness(register);
@@ -592,6 +744,8 @@ async function refresh() {
     showRecipientTemplates(templates);
     showChanneler(channeler);
     showChannelerTemplates(channelerForms);
+    showOversight(oversight);
+    showOversightTemplates(oversightForms);
     byId("auth-notice").hidden = true;
   } catch (error) {
     byId("auth-notice").hidden = false;
@@ -707,6 +861,7 @@ async function logout() {
 
 byId("incident-discovered").value = localDateInput(Date.now());
 byId("recipient-occurred").value = localDateInput(Date.now());
+byId("oversight-time").value = localDateInput(Date.now());
 for (const id of ["channeler-deadline-form", "channeler-retention-form",
                    "channeler-training-form", "channeler-rapback-form"]) {
   const form = byId(id);
@@ -727,6 +882,9 @@ for (const formName of ["deadline","retention","training","rapback"]) {
 }
 byId("recipient-template-select").addEventListener("change", changeRecipientTemplate);
 byId("channeler-template-select").addEventListener("change", chooseChannelerTemplate);
+byId("oversight-planner").addEventListener("submit", calculateOversight);
+byId("oversight-template").addEventListener("change", selectOversightTemplate);
+byId("oversight-copy").addEventListener("click", copyOversightTemplate);
 byId("channeler-check-dissemination").addEventListener("click", () => checkChannelerSchema("dissemination"));
 byId("channeler-check-rapback-ref").addEventListener("click", () => checkChannelerSchema("rapback"));
 byId("channeler-copy-template").addEventListener("click", copyChannelerTemplate);

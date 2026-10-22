@@ -18,6 +18,7 @@
         <a href="#section-one">§ &nbsp; Section 1 definitions</a>
         <a href="#recipient">▤ &nbsp; Section 2 recipient duties</a>
         <a href="#channeler">▥ &nbsp; Section 3 channeler duties</a>
+        <a href="#fbi-oversight">◈ &nbsp; Section 4 FBI oversight</a>
         <a href="#activity">◷ &nbsp; Activity log</a>
       </nav>
       <div class="side-bottom"><div class="side-status"><span class="dot"></span><span><strong>Local environment</strong><small>Loopback · synthetic only</small></span></div><p>Built for responsible testing.<br>Not connected to FBI NGI.</p><a href="https://github.com/blocktransfer/fbi-test" target="_blank" rel="noopener noreferrer">View source ↗</a></div>
@@ -315,6 +316,58 @@
                 <p id="channeler-template-feedback" class="hint" role="status" aria-live="polite">Only the unpopulated template text is copied.</p>
               </div>
               <p class="recipient-caution">§3.15: Channeler written security-violation reports are due within five calendar days of <strong>discovery</strong>, unlike the Authorized Recipient clock in §2.08. §3.23: the Channeler relays validation messages but cannot validate for the Recipient.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="panel oversight-section" id="fbi-oversight" aria-labelledby="oversight-title">
+          <div class="panel-head"><div><div class="eyebrow">COMPACT COUNCIL / SECTION 4 · FBI AND COMPACT OFFICER DUTIES</div>
+            <h2 id="oversight-title">FBI oversight &amp; agency approvals</h2>
+            <p>§§4.01–4.10 · Printed pages 8–9. External government responsibilities, not capabilities conferred on this sender.</p>
+          </div><span class="counter" id="oversight-count">Loading…</span></div>
+          <div class="warning recipient-warning"><span class="warning-icon">!</span>
+            <div><strong>This console is not an FBI approval service</strong>
+              <p>The FBI or Compact Officer/Chief Administrator must actually perform these actions. A reference marked “reported” only means an operator entered a document code. It cannot authorize CHRI, issue OCA/ORI, certify audits, or approve plans.</p>
+            </div><small>UNVERIFIED</small></div>
+          <div class="oversight-grid">
+            <div class="recipient-list-panel">
+              <div class="field-heading"><strong>FBI / Compact Officer checkpoints</strong><span>28 operator reports</span></div>
+              <div id="oversight-checks" class="recipient-controls" aria-live="polite">
+                <p class="hint">Unlock your authorized local session to load Section 4 obligations.</p>
+              </div>
+            </div>
+            <div class="oversight-tools">
+              <div class="oversight-panel">
+                <h3>Agency audit &amp; update calendar</h3>
+                <p class="subtle">Estimate milestones from a hypothetical, explicitly supplied UTC-equivalent local timestamp. No dates, identifiers or personnel records are retained.</p>
+                <form id="oversight-planner">
+                  <label>Event or reference date
+                    <select id="oversight-event" name="event">
+                      <option value="first_approved_chri_receipt">First approved CHRI receipt — §4.01(a) and §4.03</option>
+                      <option value="policy_update_notification">FBI policy update notification — §4.02</option>
+                      <option value="personnel_access_change">CHRI-access personnel status changed — §4.04</option>
+                    </select>
+                  </label>
+                  <label>Hypothetical occurrence / first receipt (local time)
+                    <input id="oversight-time" type="datetime-local" name="occurred_at" required>
+                  </label>
+                  <button class="button secondary" type="submit">Calculate oversight milestones</button>
+                </form>
+                <div class="recipient-output" id="oversight-output" role="status" aria-live="polite">
+                  Audit calculations do not establish whether an agreement was executed or an audit was completed.
+                </div>
+              </div>
+              <div class="oversight-panel">
+                <h3>Official-action document outlines</h3>
+                <p class="subtle">Blank drafts for human use outside the application. These do not generate an official decision, certification or written approval.</p>
+                <label for="oversight-template">Choose blank template</label>
+                <select id="oversight-template"><option value="">Select a document…</option></select>
+                <textarea id="oversight-template-text" rows="9" readonly aria-label="Blank oversight correspondence template"></textarea>
+                <button class="button secondary" id="oversight-copy" type="button" disabled>Copy blank outline</button>
+                <p class="hint" id="oversight-template-note" role="status" aria-live="polite">No document has been sent or approved.</p>
+              </div>
+              <p class="recipient-caution">§4.01(a) requires a combined state/federal representative-sample audit program <strong>before</strong> permission may be granted. §4.03 independently requires FBI Channeler audits and first-audit certification with results within 90 calendar days of initial approved CHRI receipt. One-year and triennial dates shown here are illustrative planning anchors where the text does not specify an exact trigger.</p>
             </div>
           </div>
         </section>

@@ -153,3 +153,17 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#9cabb8;font-si
 .channeler-schema h3{font-size:13px;margin:0 0 7px}
 .channeler-schema .button{margin:8px 0}
 .channeler-schema .recipient-output{margin-top:13px}
+
+/* Compact Council Section 4 external-agency oversight. */
+.oversight-section{margin-top:20px}
+.oversight-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(330px,.95fr)}
+.oversight-tools{padding:21px;min-width:0}
+.oversight-panel{background:#f9fbfc;border:1px solid #e0e9ed;border-radius:9px;padding:17px;margin-bottom:17px}
+.oversight-panel h3{font-size:13px;margin:0 0 8px}
+.oversight-panel form{display:grid;gap:12px}
+.oversight-panel form label,.oversight-panel>label{display:grid;gap:7px;color:#526878;font-size:10.5px;font-weight:770}
+.oversight-panel input[type=datetime-local],.oversight-panel select,.oversight-panel textarea{width:100%;min-width:0;padding:11px;border:1px solid #dbe5ec;border-radius:7px;background:#fff;color:#30495c;font-size:11px}
+.oversight-panel textarea{min-height:170px;margin:11px 0;resize:vertical;line-height:1.6;font-family:ui-monospace,monospace}
+.oversight-panel .recipient-output{margin-top:14px}
+.oversight-panel .button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:1140px){.oversight-grid{grid-template-columns:1fr}.oversight-tools{padding:17px}}
