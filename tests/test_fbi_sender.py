@@ -43,6 +43,15 @@ class SyntheticSenderTests(unittest.TestCase):
         with self.assertRaises(sender.SenderError):
             sender.read_synthetic_file(self.path)
 
+    def test_marker_cannot_smuggle_real_or_arbitrary_bytes(self):
+        self.path.write_bytes(sender.TEST_MAGIC + b"\x00\x01" + b"private biometric record")
+        with self.assertRaises(sender.SenderError):
+            sender.read_synthetic_file(self.path)
+
+    def test_deterministic_zero_padding_is_accepted(self):
+        self.path.write_bytes(sender.TEST_MAGIC + b"\x00\x01" + b"\x00" * 1024)
+        self.assertEqual(len(sender.read_synthetic_file(self.path)), len(sender.TEST_MAGIC) + 1026)
+
     @unittest.skipUnless(os.name == "posix", "POSIX permissions required")
     def test_world_readable_file_rejected(self):
         self.path.chmod(0o644)

@@ -71,6 +71,9 @@ def read_synthetic_file(path: str | Path) -> bytes:
             data = source.read(MAX_TEST_BYTES + 1)
         if len(data) > MAX_TEST_BYTES or not data.startswith(TEST_MAGIC):
             raise SenderError("Input is not a supported synthetic test payload")
+        tail = data[len(TEST_MAGIC):]
+        if len(tail) < 2 or tail[:2] != b"\x00\x01" or any(value != 0 for value in tail[2:]):
+            raise SenderError("Only deterministic non-biometric test bytes are allowed")
         return data
     finally:
         os.close(fd)

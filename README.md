@@ -68,8 +68,10 @@ a reference's syntax; the software cannot verify the authenticity of the
 agency's authorization. Do not use the placeholder hostname as an actual
 destination. The sender does not provide any FBI/CJIS WAN adapter.
 
-The synthetic magic header is **not an EBTS record**. Never append actual
-fingerprints, demographic information, CHRI, CJI, or other PII after it.
+The synthetic magic header is **not an EBTS record**. Only the fixed header,
+two prescribed test bytes, and optional zero padding are accepted; arbitrary
+trailing bytes are rejected. Never use real fingerprints, demographic
+information, CHRI, CJI, or other PII.
 Never put real data, keys, or agreements into issues, pull requests, logs,
 CI jobs, or this public repository.
 
