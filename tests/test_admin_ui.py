@@ -166,7 +166,8 @@ class AdminHttpTests(unittest.TestCase):
     def test_section_one_assessment_api_uses_strict_nonidentifying_schema(self):
         from channeling_assessment import FIELDS
         choices = {"role": "channeler", "recipient_kind": "government", "purpose": "licensing",
-                   "authority_basis": "federal_statute", "identification_method": "ten_flat"}
+                   "authority_basis": "federal_statute", "identification_method": "ten_flat",
+                   "has_biometric_identifiers": True}
         payload = {key: choices.get(key, False) for key in FIELDS}
         status, result, _ = self.request("POST", "/api/section-one/assess", payload)
         self.assertEqual(status, 200)
@@ -184,7 +185,8 @@ class AdminHttpTests(unittest.TestCase):
     def test_section_one_assessment_requires_system_notice(self):
         from channeling_assessment import FIELDS
         choices = {"role": "channeler", "recipient_kind": "government", "purpose": "licensing",
-                   "authority_basis": "federal_statute", "identification_method": "ten_flat"}
+                   "authority_basis": "federal_statute", "identification_method": "ten_flat",
+                   "has_biometric_identifiers": True}
         payload = {key: choices.get(key, False) for key in FIELDS}
         self.assertEqual(
             self.request("POST", "/api/section-one/assess", payload, token=False)[0], 401
